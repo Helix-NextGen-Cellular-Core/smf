@@ -9,6 +9,8 @@ package context
 import (
 	"context"
 	"fmt"
+	"hash/fnv"
+	"sort"
 	"strconv"
 	"strings"
 
@@ -437,7 +439,30 @@ func (smContext *SMContext) PCFSelection() error {
 		metrics.IncrementSvcNrfMsgStats(SMF_Self().NfInstanceID, string(svcmsgtypes.NnrfNFDiscoveryPcf), "In", http.StatusText(res.StatusCode), "")
 	}
 
-	smContext.SelectedPCFProfile = rep.NfInstances[0]
+	nfInstanceIds := make([]string, 0, len(rep.NfInstances))
+	for _, nfProfile := range rep.NfInstances {
+		nfInstanceIds = append(nfInstanceIds, nfProfile.NfInstanceId)
+	}
+	sort.Strings(nfInstanceIds)
+	nfInstanceIdIndexMap := make(map[string]int)
+	for index, value := range nfInstanceIds {
+		nfInstanceIdIndexMap[value] = index
+	}
+
+	nfInstanceIndex := 0
+	if SMF_Self().EnableScaling == true {
+		h := fnv.New32a()
+		h.Write([]byte(smContext.Supi))
+		key := int(h.Sum32())
+		nfInstanceIndex = int(key % len(rep.NfInstances))
+	}
+	for _, nfProfile := range rep.NfInstances {
+		if nfInstanceIndex != nfInstanceIdIndexMap[nfProfile.NfInstanceId] {
+			continue
+		}
+		smContext.SelectedPCFProfile = nfProfile
+		break
+	}
 
 	// Create SMPolicyControl Client for this SM Context
 	for _, service := range *smContext.SelectedPCFProfile.NfServices {

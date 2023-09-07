@@ -90,6 +90,7 @@ type Configuration struct {
 	EnableNrfCaching         bool           `yaml:"enableNrfCaching"`
 	NrfCacheEvictionInterval int            `yaml:"nrfCacheEvictionInterval"`
 	StaticIpInfo             []StaticIpInfo `yaml:"staticIpInfo"`
+	EnableScaling            bool           `yaml:"enableScaling,omitempty"`
 }
 
 type StaticIpInfo struct {

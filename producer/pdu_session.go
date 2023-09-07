@@ -118,7 +118,7 @@ func HandlePDUSessionSMContextCreate(eventData interface{}) error {
 	}
 
 	// Query UDM
-	if problemDetails, err := consumer.SendNFDiscoveryUDM(); err != nil {
+	if problemDetails, err := consumer.SendNFDiscoveryUDM(smContext.Supi); err != nil {
 		smContext.SubPduSessLog.Errorf("PDUSessionSMContextCreate, send NF Discovery Serving UDM Error[%v]", err)
 		txn.Rsp = smContext.GeneratePDUSessionEstablishmentReject("UDMDiscoveryFailure")
 		return fmt.Errorf("UdmError")

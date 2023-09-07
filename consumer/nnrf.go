@@ -9,7 +9,9 @@ package consumer
 import (
 	"context"
 	"fmt"
+	"hash/fnv"
 	"net/http"
+	"sort"
 	"strings"
 	"time"
 
@@ -252,7 +254,7 @@ func SendNrfForNfInstance(nrfUri string, targetNfType, requestNfType models.NfTy
 	return result, localErr
 }
 
-func SendNFDiscoveryUDM() (*models.ProblemDetails, error) {
+func SendNFDiscoveryUDM(id string) (*models.ProblemDetails, error) {
 	localVarOptionals := Nnrf_NFDiscovery.SearchNFInstancesParamOpts{}
 
 	var result models.SearchResult
@@ -265,8 +267,31 @@ func SendNFDiscoveryUDM() (*models.ProblemDetails, error) {
 	}
 
 	if localErr == nil {
-		smf_context.SMF_Self().UDMProfile = result.NfInstances[0]
+		// smf_context.SMF_Self().UDMProfile = result.NfInstances[0]
+		nfInstanceIds := make([]string, 0, len(result.NfInstances))
+		for _, nfProfile := range result.NfInstances {
+			nfInstanceIds = append(nfInstanceIds, nfProfile.NfInstanceId)
+		}
+		sort.Strings(nfInstanceIds)
+		nfInstanceIdIndexMap := make(map[string]int)
+		for index, value := range nfInstanceIds {
+			nfInstanceIdIndexMap[value] = index
+		}
 
+		nfInstanceIndex := 0
+		if smf_context.SMF_Self().EnableScaling == true {
+			h := fnv.New32a()
+			h.Write([]byte(id))
+			key := int(h.Sum32())
+			nfInstanceIndex = int(key % len(result.NfInstances))
+		}
+		for _, nfProfile := range result.NfInstances {
+			if nfInstanceIndex != nfInstanceIdIndexMap[nfProfile.NfInstanceId] {
+				continue
+			}
+			smf_context.SMF_Self().UDMProfile = nfProfile
+			break
+		}
 		for _, service := range *smf_context.SMF_Self().UDMProfile.NfServices {
 			if service.ServiceName == models.ServiceName_NUDM_SDM {
 				SDMConf := Nudm_SubscriberDataManagement.NewConfiguration()
@@ -336,8 +361,31 @@ func SendNFDiscoveryServingAMF(smContext *smf_context.SMContext) (*models.Proble
 		if result.NfInstances == nil {
 			return nil, openapi.ReportError("NfInstances is nil")
 		}
-		smContext.SubConsumerLog.Info("send NF Discovery Serving AMF Successful")
-		smContext.AMFProfile = deepcopy.Copy(result.NfInstances[0]).(models.NfProfile)
+		nfInstanceIds := make([]string, 0, len(result.NfInstances))
+		for _, nfProfile := range result.NfInstances {
+			nfInstanceIds = append(nfInstanceIds, nfProfile.NfInstanceId)
+		}
+		sort.Strings(nfInstanceIds)
+		nfInstanceIdIndexMap := make(map[string]int)
+		for index, value := range nfInstanceIds {
+			nfInstanceIdIndexMap[value] = index
+		}
+
+		nfInstanceIndex := 0
+		if smf_context.SMF_Self().EnableScaling == true {
+			h := fnv.New32a()
+			h.Write([]byte(smContext.Supi))
+			key := int(h.Sum32())
+			nfInstanceIndex = int(key % len(result.NfInstances))
+		}
+		for _, nfProfile := range result.NfInstances {
+			if nfInstanceIndex != nfInstanceIdIndexMap[nfProfile.NfInstanceId] {
+				continue
+			}
+			smContext.SubConsumerLog.Info("send NF Discovery Serving AMF Successful")
+			smContext.AMFProfile = deepcopy.Copy(nfProfile).(models.NfProfile)
+			break
+		}
 	} else {
 		apiError, ok := localErr.(openapi.GenericOpenAPIError)
 		if ok {

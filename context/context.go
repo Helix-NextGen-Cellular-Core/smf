@@ -84,6 +84,7 @@ type SMFContext struct {
 	EnableNrfCaching         bool
 	NrfCacheEvictionInterval time.Duration
 	StaticIpInfo             *[]factory.StaticIpInfo
+	EnableScaling            bool
 }
 
 // RetrieveDnnInformation gets the corresponding dnn info from S-NSSAI and DNN
@@ -224,7 +225,7 @@ func InitSmfContext(config *factory.Config) *SMFContext {
 	smfContext.UserPlaneInformation = NewUserPlaneInformation(&configuration.UserPlaneInformation)
 
 	smfContext.EnableNrfCaching = configuration.EnableNrfCaching
-
+	smfContext.EnableScaling = configuration.EnableScaling
 	if configuration.EnableNrfCaching {
 		if configuration.NrfCacheEvictionInterval == 0 {
 			smfContext.NrfCacheEvictionInterval = time.Duration(900) // 15 mins
