@@ -4,6 +4,8 @@
 
 module github.com/omec-project/smf
 
+replace github.com/omec-project/nrf => ../nrf
+
 go 1.16
 
 require (
