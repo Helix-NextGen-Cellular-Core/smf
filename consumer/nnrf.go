@@ -361,27 +361,7 @@ func SendNFDiscoveryServingAMF(smContext *smf_context.SMContext) (*models.Proble
 		if result.NfInstances == nil {
 			return nil, openapi.ReportError("NfInstances is nil")
 		}
-		nfInstanceIds := make([]string, 0, len(result.NfInstances))
 		for _, nfProfile := range result.NfInstances {
-			nfInstanceIds = append(nfInstanceIds, nfProfile.NfInstanceId)
-		}
-		sort.Strings(nfInstanceIds)
-		nfInstanceIdIndexMap := make(map[string]int)
-		for index, value := range nfInstanceIds {
-			nfInstanceIdIndexMap[value] = index
-		}
-
-		nfInstanceIndex := 0
-		if smf_context.SMF_Self().EnableScaling == true {
-			h := fnv.New32a()
-			h.Write([]byte(smContext.Supi))
-			key := int(h.Sum32())
-			nfInstanceIndex = int(key % len(result.NfInstances))
-		}
-		for _, nfProfile := range result.NfInstances {
-			if nfInstanceIndex != nfInstanceIdIndexMap[nfProfile.NfInstanceId] {
-				continue
-			}
 			smContext.SubConsumerLog.Info("send NF Discovery Serving AMF Successful")
 			smContext.AMFProfile = deepcopy.Copy(nfProfile).(models.NfProfile)
 			break
