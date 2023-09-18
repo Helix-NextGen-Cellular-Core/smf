@@ -54,14 +54,14 @@ func SetupSmfCollection() {
 	logger.CfgLog.Infof("initialising db name [%v] url [%v] ", dbName, dbUrl)
 
 	//UUID table
-	MongoDBLibrary.SetMongoDB(dbName, dbUrl)
+	MongoDBLibrary.SetMongoDBWithPoolSize(dbName, dbUrl, 5, 10)
 	_, err := MongoDBLibrary.CreateIndex(SmContextDataColl, "ref")
 	if err != nil {
 		logger.CtxLog.Errorf("Create index failed on ref field.")
 	}
 
 	//SEID Table
-	MongoDBLibrary.SetMongoDB(dbName, dbUrl)
+	MongoDBLibrary.SetMongoDBWithPoolSize(dbName, dbUrl, 5, 10)
 	_, err = MongoDBLibrary.CreateIndex(SeidSmContextCol, "seid")
 	if err != nil {
 		logger.CtxLog.Errorf("Create index failed on TxnId field.")
@@ -250,7 +250,7 @@ func StoreSmContextInDB(smContext *SMContext) {
 	filter := bson.M{"ref": smContext.Ref}
 	logger.CtxLog.Infof("filter: ", filter)
 
-	MongoDBLibrary.RestfulAPIPost(SmContextDataColl, filter, smContextBsonA)
+	go MongoDBLibrary.RestfulAPIPost(SmContextDataColl, filter, smContextBsonA)
 
 }
 
@@ -275,7 +275,7 @@ func StoreSeidContextInDB(seidUint uint64, smContext *SMContext) {
 	filter := bson.M{"seid": seid}
 	logger.CtxLog.Infof("filter : ", filter)
 
-	MongoDBLibrary.RestfulAPIPost(SeidSmContextCol, filter, itemBsonA)
+	go MongoDBLibrary.RestfulAPIPost(SeidSmContextCol, filter, itemBsonA)
 }
 
 // store mapping ref to seid in db
@@ -289,7 +289,7 @@ func StoreRefToSeidInDB(seidUint uint64, smContext *SMContext) {
 	filter := bson.M{"ref": smContext.Ref}
 	logger.CtxLog.Infof("filter : ", filter)
 
-	MongoDBLibrary.RestfulAPIPost(RefSeidCol, filter, itemBsonA)
+	go MongoDBLibrary.RestfulAPIPost(RefSeidCol, filter, itemBsonA)
 }
 
 func GetSeidByRefInDB(ref string) (seid uint64) {
@@ -355,7 +355,7 @@ func DeleteSmContextInDBBySEID(seidUint uint64) {
 	if result != nil {
 		ref := result["ref"].(string)
 
-		MongoDBLibrary.RestfulAPIDeleteOne(SeidSmContextCol, filter)
+		go MongoDBLibrary.RestfulAPIDeleteOne(SeidSmContextCol, filter)
 		DeleteSmContextInDBByRef(ref)
 	} else {
 		logger.CtxLog.Infof("DB entry doesn't exist with seid: ", seid)
@@ -368,7 +368,7 @@ func DeleteSmContextInDBByRef(ref string) {
 	fmt.Println("db - delete SMContext In DB w ref")
 	filter := bson.M{"ref": ref}
 	logger.CtxLog.Infof("filter : ", filter)
-	MongoDBLibrary.RestfulAPIDeleteOne(SmContextDataColl, filter)
+	go MongoDBLibrary.RestfulAPIDeleteOne(SmContextDataColl, filter)
 }
 
 // Delete SMContext in smContextPool and seidSMContextMap, for test

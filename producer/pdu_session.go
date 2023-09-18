@@ -380,36 +380,33 @@ func HandlePDUSessionSMContextUpdate(eventData interface{}) error {
 			smContext.ChangeState(smf_context.SmStatePfcpModify)
 			smContext.SubCtxLog.Traceln("PDUSessionSMContextUpdate, SMContextState Change State: ", smContext.SMContextState.String())
 			smContext.SubPduSessLog.Infof("PDUSessionSMContextUpdate, send PFCP Modification")
-
-			//Initiate PFCP Modify
-			if err = SendPfcpSessionModifyReq(smContext, pfcpParam); err != nil {
-				//Modify failure
-				smContext.SubCtxLog.Errorf("pfcp session modify error: %v ", err.Error())
-
-				//Form Modify err rsp
-				httpResponse = makePduCtxtModifyErrRsp(smContext, err.Error())
-
-				/*
-					// TODO: Add Ctxt cleanup if PFCP response is context not found,
-					// just initiating PFCP session release will not help
-						//PFCP Modify Err, initiate release
-						SendPfcpSessionReleaseReq(smContext)
-
-						//Change state to InactivePending
-						smContext.ChangeState(smf_context.SmStateInActivePending)
-						smContext.SubCtxLog.Traceln("PDUSessionSMContextUpdate, SMContextState Change State: ", smContext.SMContextState.String())
-				*/
-
-			} else {
-				//Modify Success
-				httpResponse = &http_wrapper.Response{
-					Status: http.StatusOK,
-					Body:   response,
-				}
-
-				smContext.ChangeState(smf_context.SmStateActive)
-				smContext.SubCtxLog.Traceln("SMContextState Change State: ", smContext.SMContextState.String())
+			//Iftekhar: Skipping call to PFCP end point as we are bypassing UPF
+			httpResponse = &http_wrapper.Response{
+				Status: http.StatusOK,
+				Body:   response,
 			}
+
+			smContext.ChangeState(smf_context.SmStateActive)
+			smContext.SubCtxLog.Traceln("SMContextState Change State: ", smContext.SMContextState.String())
+			/*
+				//Initiate PFCP Modify
+				if err = SendPfcpSessionModifyReq(smContext, pfcpParam); err != nil {
+					//Modify failure
+					smContext.SubCtxLog.Errorf("pfcp session modify error: %v ", err.Error())
+
+					//Form Modify err rsp
+					httpResponse = makePduCtxtModifyErrRsp(smContext, err.Error())
+
+				} else {
+					//Modify Success
+					httpResponse = &http_wrapper.Response{
+						Status: http.StatusOK,
+						Body:   response,
+					}
+
+					smContext.ChangeState(smf_context.SmStateActive)
+					smContext.SubCtxLog.Traceln("SMContextState Change State: ", smContext.SMContextState.String())
+				}*/
 		}
 
 	case smf_context.SmStateModify:
