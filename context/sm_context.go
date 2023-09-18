@@ -170,7 +170,7 @@ type SMContext struct {
 
 	// lock
 	// SMLock sync.Mutex `json:"smLock,omitempty" yaml:"smLock" bson:"smLock,omitempty"` // ignore
-	SMLock sync.Mutex `json:"-" yaml:"smLock" bson:"-"` // ignore
+	SMLock sync.RWMutex `json:"-" yaml:"smLock" bson:"-"` // ignore
 
 	SubGsmLog      *logrus.Entry `json:"-" yaml:"subGsmLog" bson:"-,"`     // ignore
 	SubPfcpLog     *logrus.Entry `json:"-" yaml:"subPfcpLog" bson:"-"`     // ignore
@@ -298,6 +298,7 @@ func GetSMContext(ref string) (smContext *SMContext) {
 	if value, ok := smContextPool.Load(ref); ok {
 		smContext = value.(*SMContext)
 	} else {
+		//smContext.SubCtxLog.Infof("Context not found in pool %s", smContext.Supi)
 		if factory.SmfConfig.Configuration.EnableDbStore {
 			smContext := GetSMContextByRefInDB(ref)
 			if smContext != nil {
@@ -323,7 +324,7 @@ func RemoveSMContext(ref string) {
 	for _, pfcpSessionContext := range smContext.PFCPContext {
 		seidSMContextMap.Delete(pfcpSessionContext.LocalSEID)
 		if factory.SmfConfig.Configuration.EnableDbStore {
-			DeleteSmContextInDBBySEID(pfcpSessionContext.LocalSEID)
+			go DeleteSmContextInDBBySEID(pfcpSessionContext.LocalSEID)
 		}
 	}
 
@@ -337,7 +338,7 @@ func RemoveSMContext(ref string) {
 	smContextActive := decSMContextActive()
 	metrics.SetSessStats(SMF_Self().NfInstanceID, smContextActive)
 	if factory.SmfConfig.Configuration.EnableDbStore {
-		DeleteSmContextInDBByRef(smContext.Ref)
+		go DeleteSmContextInDBByRef(smContext.Ref)
 	}
 }
 
@@ -501,8 +502,9 @@ func (smContext *SMContext) AllocateLocalSEIDForUPPath(path UPPath) {
 			seidSMContextMap.Store(allocatedSEID, smContext)
 
 			if factory.SmfConfig.Configuration.EnableDbStore {
-				StoreSeidContextInDB(allocatedSEID, smContext)
-				StoreRefToSeidInDB(allocatedSEID, smContext)
+				//Iftekhar: Disabling to as we are bypassing UPF
+				//go StoreSeidContextInDB(allocatedSEID, smContext)
+				//go StoreRefToSeidInDB(allocatedSEID, smContext)
 			}
 		}
 	}
@@ -524,8 +526,9 @@ func (smContext *SMContext) AllocateLocalSEIDForDataPath(dataPath *DataPath) {
 			seidSMContextMap.Store(allocatedSEID, smContext)
 
 			if factory.SmfConfig.Configuration.EnableDbStore {
-				StoreSeidContextInDB(allocatedSEID, smContext)
-				StoreRefToSeidInDB(allocatedSEID, smContext)
+				//Iftekhar: Disabling to as we are bypassing UPF
+				//go StoreSeidContextInDB(allocatedSEID, smContext)
+				//go StoreRefToSeidInDB(allocatedSEID, smContext)
 			}
 		}
 	}

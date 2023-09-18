@@ -362,7 +362,7 @@ func SendNFDiscoveryServingAMF(smContext *smf_context.SMContext) (*models.Proble
 			return nil, openapi.ReportError("NfInstances is nil")
 		}
 		for _, nfProfile := range result.NfInstances {
-			smContext.SubConsumerLog.Info("send NF Discovery Serving AMF Successful")
+			//smContext.SubConsumerLog.Infof("send NF Discovery Serving AMF Successful %v amfID %v", smContext.ServingNfId, nfProfile.Ipv4Addresses)
 			smContext.AMFProfile = deepcopy.Copy(nfProfile).(models.NfProfile)
 			break
 		}
