@@ -501,10 +501,9 @@ func (smContext *SMContext) AllocateLocalSEIDForUPPath(path UPPath) {
 
 			seidSMContextMap.Store(allocatedSEID, smContext)
 
-			if factory.SmfConfig.Configuration.EnableDbStore {
-				//Iftekhar: Disabling to as we are bypassing UPF
-				//go StoreSeidContextInDB(allocatedSEID, smContext)
-				//go StoreRefToSeidInDB(allocatedSEID, smContext)
+			if factory.SmfConfig.Configuration.EnableDbStore && !SMF_Self().BypassUPF {
+				go StoreSeidContextInDB(allocatedSEID, smContext)
+				go StoreRefToSeidInDB(allocatedSEID, smContext)
 			}
 		}
 	}
@@ -525,10 +524,9 @@ func (smContext *SMContext) AllocateLocalSEIDForDataPath(dataPath *DataPath) {
 
 			seidSMContextMap.Store(allocatedSEID, smContext)
 
-			if factory.SmfConfig.Configuration.EnableDbStore {
-				//Iftekhar: Disabling to as we are bypassing UPF
-				//go StoreSeidContextInDB(allocatedSEID, smContext)
-				//go StoreRefToSeidInDB(allocatedSEID, smContext)
+			if factory.SmfConfig.Configuration.EnableDbStore && !SMF_Self().BypassUPF {
+				go StoreSeidContextInDB(allocatedSEID, smContext)
+				go StoreRefToSeidInDB(allocatedSEID, smContext)
 			}
 		}
 	}

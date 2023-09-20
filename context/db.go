@@ -54,14 +54,14 @@ func SetupSmfCollection() {
 	logger.CfgLog.Infof("initialising db name [%v] url [%v] ", dbName, dbUrl)
 
 	//UUID table
-	MongoDBLibrary.SetMongoDBWithPoolSize(dbName, dbUrl, 5, 10)
+	MongoDBLibrary.SetMongoDBWithPoolSize(dbName, dbUrl, 1, 5)
 	_, err := MongoDBLibrary.CreateIndex(SmContextDataColl, "ref")
 	if err != nil {
 		logger.CtxLog.Errorf("Create index failed on ref field.")
 	}
 
 	//SEID Table
-	MongoDBLibrary.SetMongoDBWithPoolSize(dbName, dbUrl, 5, 10)
+	MongoDBLibrary.SetMongoDBWithPoolSize(dbName, dbUrl, 1, 5)
 	_, err = MongoDBLibrary.CreateIndex(SeidSmContextCol, "seid")
 	if err != nil {
 		logger.CtxLog.Errorf("Create index failed on TxnId field.")
