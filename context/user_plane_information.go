@@ -9,6 +9,7 @@ import (
 	"bytes"
 	"net"
 	"reflect"
+	"sync"
 
 	"github.com/omec-project/pfcp/pfcpType"
 	"github.com/omec-project/smf/factory"
@@ -27,6 +28,8 @@ type UserPlaneInformation struct {
 }
 
 type UPNodeType string
+
+var UpfTxnsMutex sync.RWMutex
 
 const (
 	UPNODE_UPF UPNodeType = "UPF"
@@ -204,7 +207,9 @@ func (upi *UserPlaneInformation) GenerateDefaultPath(selection *UPFSelectionPara
 				if path[0].Type == UPNODE_AN {
 					path = path[1:]
 				}
+				UpfTxnsMutex.Lock()
 				upi.DefaultUserPlanePath[selection.String()] = path
+				UpfTxnsMutex.Unlock()
 				break
 			} else {
 				logger.CtxLog.Debugf("No path between an-node[%v] and upf[%v] ", anName, string(destinations[0].NodeID.NodeIdValue))

@@ -6,6 +6,8 @@ module github.com/omec-project/smf
 
 replace github.com/omec-project/nrf => ../nrf
 
+replace github.com/omec-project/util => ../util
+
 replace github.com/omec-project/MongoDBLibrary => ../mongodblibrary
 
 go 1.16
