@@ -298,7 +298,6 @@ func GetSMContext(ref string) (smContext *SMContext) {
 	if value, ok := smContextPool.Load(ref); ok {
 		smContext = value.(*SMContext)
 	} else {
-		//smContext.SubCtxLog.Infof("Context not found in pool %s", smContext.Supi)
 		if factory.SmfConfig.Configuration.EnableDbStore {
 			smContext := GetSMContextByRefInDB(ref)
 			if smContext != nil {
@@ -324,7 +323,8 @@ func RemoveSMContext(ref string) {
 	for _, pfcpSessionContext := range smContext.PFCPContext {
 		seidSMContextMap.Delete(pfcpSessionContext.LocalSEID)
 		if factory.SmfConfig.Configuration.EnableDbStore {
-			go DeleteSmContextInDBBySEID(pfcpSessionContext.LocalSEID)
+			//go DeleteSmContextInDBBySEID(pfcpSessionContext.LocalSEID)
+			DeleteSmContextSeidChannel <- pfcpSessionContext.LocalSEID
 		}
 	}
 
@@ -338,7 +338,8 @@ func RemoveSMContext(ref string) {
 	smContextActive := decSMContextActive()
 	metrics.SetSessStats(SMF_Self().NfInstanceID, smContextActive)
 	if factory.SmfConfig.Configuration.EnableDbStore {
-		go DeleteSmContextInDBByRef(smContext.Ref)
+		//go DeleteSmContextInDBByRef(smContext.Ref)
+		DeleteSmContextRefChannel <- smContext.Ref
 	}
 }
 
@@ -502,8 +503,16 @@ func (smContext *SMContext) AllocateLocalSEIDForUPPath(path UPPath) {
 			seidSMContextMap.Store(allocatedSEID, smContext)
 
 			if factory.SmfConfig.Configuration.EnableDbStore && !SMF_Self().BypassUPF {
-				go StoreSeidContextInDB(allocatedSEID, smContext)
-				go StoreRefToSeidInDB(allocatedSEID, smContext)
+
+				//go StoreSeidContextInDB(allocatedSEID, smContext)
+				//go StoreRefToSeidInDB(allocatedSEID, smContext)
+				//logger.CtxLog.Infof("Save SEID context into channel, %v", smContext.Supi)
+				seid := SeidConv(allocatedSEID)
+				item := SeidSmContextRef{
+					Ref:  smContext.Ref,
+					Seid: seid,
+				}
+				SeidSmContextDbChannel <- item
 			}
 		}
 	}
@@ -525,8 +534,14 @@ func (smContext *SMContext) AllocateLocalSEIDForDataPath(dataPath *DataPath) {
 			seidSMContextMap.Store(allocatedSEID, smContext)
 
 			if factory.SmfConfig.Configuration.EnableDbStore && !SMF_Self().BypassUPF {
-				go StoreSeidContextInDB(allocatedSEID, smContext)
-				go StoreRefToSeidInDB(allocatedSEID, smContext)
+				//go StoreSeidContextInDB(allocatedSEID, smContext)
+				//go StoreRefToSeidInDB(allocatedSEID, smContext)
+				seid := SeidConv(allocatedSEID)
+				item := SeidSmContextRef{
+					Ref:  smContext.Ref,
+					Seid: seid,
+				}
+				SeidSmContextDbChannel <- item
 			}
 		}
 	}

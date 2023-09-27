@@ -11,6 +11,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net"
+	"runtime"
 	"sync"
 
 	"github.com/omec-project/MongoDBLibrary"
@@ -28,6 +29,12 @@ import (
 	"os"
 )
 
+var SmContextDbChannel chan *SMContext
+var SeidSmContextDbChannel chan SeidSmContextRef
+
+var DeleteSmContextSeidChannel chan uint64
+var DeleteSmContextRefChannel chan string
+
 const (
 	SmContextDataColl = "smf.data.smContext"
 	// TransactionDataCol = "smf.data.transaction"
@@ -42,6 +49,10 @@ func SetupSmfCollection() {
 
 	dbName := "sdcore_smf"
 	dbUrl := "mongodb://mongodb-arbiter-headless"
+	SmContextDbChannel = make(chan *SMContext, 8192)
+	SeidSmContextDbChannel = make(chan SeidSmContextRef, 8192)
+	DeleteSmContextSeidChannel = make(chan uint64, 8192)
+	DeleteSmContextRefChannel = make(chan string, 8192)
 
 	if factory.SmfConfig.Configuration.Mongodb.Url != "" {
 		dbUrl = factory.SmfConfig.Configuration.Mongodb.Url
@@ -54,24 +65,30 @@ func SetupSmfCollection() {
 	logger.CfgLog.Infof("initialising db name [%v] url [%v] ", dbName, dbUrl)
 
 	//UUID table
-	MongoDBLibrary.SetMongoDBWithPoolSize(dbName, dbUrl, 1, 5)
+	MongoDBLibrary.SetMongoDB(dbName, dbUrl)
 	_, err := MongoDBLibrary.CreateIndex(SmContextDataColl, "ref")
 	if err != nil {
 		logger.CtxLog.Errorf("Create index failed on ref field.")
 	}
 
 	//SEID Table
-	MongoDBLibrary.SetMongoDBWithPoolSize(dbName, dbUrl, 1, 5)
 	_, err = MongoDBLibrary.CreateIndex(SeidSmContextCol, "seid")
 	if err != nil {
 		logger.CtxLog.Errorf("Create index failed on TxnId field.")
 	}
 
 	smfCount := MongoDBLibrary.GetUniqueIdentity("smfCount")
-	logger.CtxLog.Infoln("unique id - init smfCount %v", smfCount)
+	logger.CtxLog.Infof("unique id - init smfCount %v", smfCount)
 
 	// set os env
 	os.Setenv("SMF_COUNT", strconv.Itoa(int(smfCount)))
+
+	for i := 1; i < 25; i++ {
+		go ProcessSmContextDbChannel()
+		go ProcessSeidSmContextDbChannel()
+		go ProcessDeleteSmContextSeidChannel()
+		go ProcessDeleteSmContextRefChannel()
+	}
 
 }
 
@@ -246,11 +263,12 @@ func StoreSmContextInDB(smContext *SMContext) {
 	fmt.Println("db - Store SMContext In DB w ref")
 	smContext.SMLock.Lock()
 	defer smContext.SMLock.Unlock()
+	//st := time.Now().UnixNano()
 	smContextBsonA := ToBsonM(smContext)
 	filter := bson.M{"ref": smContext.Ref}
-	logger.CtxLog.Infof("filter: ", filter)
+	//logger.CtxLog.Infof("Time to bsonm filter: %v %v %v", filter, len(smContextBsonA), time.Now().UnixNano()-st)
 
-	go MongoDBLibrary.RestfulAPIPost(SmContextDataColl, filter, smContextBsonA)
+	MongoDBLibrary.RestfulAPIPost(SmContextDataColl, filter, smContextBsonA)
 
 }
 
@@ -275,7 +293,7 @@ func StoreSeidContextInDB(seidUint uint64, smContext *SMContext) {
 	filter := bson.M{"seid": seid}
 	logger.CtxLog.Infof("filter : ", filter)
 
-	go MongoDBLibrary.RestfulAPIPost(SeidSmContextCol, filter, itemBsonA)
+	MongoDBLibrary.RestfulAPIPost(SeidSmContextCol, filter, itemBsonA)
 }
 
 // store mapping ref to seid in db
@@ -289,7 +307,7 @@ func StoreRefToSeidInDB(seidUint uint64, smContext *SMContext) {
 	filter := bson.M{"ref": smContext.Ref}
 	logger.CtxLog.Infof("filter : ", filter)
 
-	go MongoDBLibrary.RestfulAPIPost(RefSeidCol, filter, itemBsonA)
+	MongoDBLibrary.RestfulAPIPost(RefSeidCol, filter, itemBsonA)
 }
 
 func GetSeidByRefInDB(ref string) (seid uint64) {
@@ -355,7 +373,7 @@ func DeleteSmContextInDBBySEID(seidUint uint64) {
 	if result != nil {
 		ref := result["ref"].(string)
 
-		go MongoDBLibrary.RestfulAPIDeleteOne(SeidSmContextCol, filter)
+		MongoDBLibrary.RestfulAPIDeleteOne(SeidSmContextCol, filter)
 		DeleteSmContextInDBByRef(ref)
 	} else {
 		logger.CtxLog.Infof("DB entry doesn't exist with seid: ", seid)
@@ -368,7 +386,7 @@ func DeleteSmContextInDBByRef(ref string) {
 	fmt.Println("db - delete SMContext In DB w ref")
 	filter := bson.M{"ref": ref}
 	logger.CtxLog.Infof("filter : ", filter)
-	go MongoDBLibrary.RestfulAPIDeleteOne(SmContextDataColl, filter)
+	MongoDBLibrary.RestfulAPIDeleteOne(SmContextDataColl, filter)
 }
 
 // Delete SMContext in smContextPool and seidSMContextMap, for test
@@ -415,4 +433,45 @@ func GetLocalIP() string {
 		}
 	}
 	return ""
+}
+
+func ProcessSmContextDbChannel() {
+
+	for {
+		rcvdSmContext := <-SmContextDbChannel
+		rcvdSmContext.SMLock.Lock()
+		smContextBsonA := ToBsonM(rcvdSmContext)
+		filter := bson.M{"ref": rcvdSmContext.Ref}
+		rcvdSmContext.SMLock.Unlock()
+		logger.CtxLog.Infof("Time to bsonm filter: %v %v %v", filter, len(smContextBsonA), runtime.NumGoroutine())
+		MongoDBLibrary.RestfulAPIPost(SmContextDataColl, filter, smContextBsonA)
+	}
+}
+
+func ProcessSeidSmContextDbChannel() {
+	for {
+		item := <-SeidSmContextDbChannel
+		itemBsonA := ToBsonMSeidRef(item)
+		filter := bson.M{"seid": item.Seid}
+		MongoDBLibrary.RestfulAPIPost(SeidSmContextCol, filter, itemBsonA)
+		filter = bson.M{"ref": item.Ref}
+		MongoDBLibrary.RestfulAPIPost(RefSeidCol, filter, itemBsonA)
+		logger.CtxLog.Infof("ProcessSeidSmContextDbChannel: %v %v %v", item.Seid, filter, len(itemBsonA))
+	}
+}
+
+func ProcessDeleteSmContextSeidChannel() {
+	for {
+		seid := <-DeleteSmContextSeidChannel
+		logger.CtxLog.Infof("ProcessDeleteSmContextSeidChannel: %v ", seid)
+		DeleteSmContextInDBBySEID(seid)
+	}
+}
+
+func ProcessDeleteSmContextRefChannel() {
+	for {
+		ref := <-DeleteSmContextRefChannel
+		logger.CtxLog.Infof("ProcessDeleteSmContextRefChannel: %v ", ref)
+		DeleteSmContextInDBByRef(ref)
+	}
 }

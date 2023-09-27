@@ -173,7 +173,7 @@ func StoreNodeInDB(nodeInDB *DataPathNodeInDB) {
 	filter := bson.M{"nodeIDInDB": nodeInDB.DataPathNodeUPFNodeID}
 	logger.CtxLog.Infof("filter : ", filter)
 
-	go MongoDBLibrary.RestfulAPIPost(NodeInDBCol, filter, itemBsonA)
+	MongoDBLibrary.RestfulAPIPost(NodeInDBCol, filter, itemBsonA)
 }
 
 func GetNodeInDBFromDB(nodeIDInDB NodeIDInDB) (dataPathNodeInDB *DataPathNodeInDB) {
