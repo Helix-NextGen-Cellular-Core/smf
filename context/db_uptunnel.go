@@ -171,7 +171,7 @@ func ToBsonMNodeInDB(data *DataPathNodeInDB) (ret bson.M) {
 func StoreNodeInDB(nodeInDB *DataPathNodeInDB) {
 	itemBsonA := ToBsonMNodeInDB(nodeInDB)
 	filter := bson.M{"nodeIDInDB": nodeInDB.DataPathNodeUPFNodeID}
-	logger.CtxLog.Infof("filter : ", filter)
+	logger.CtxLog.Infof("filter : %v len %v", filter, len(itemBsonA))
 
 	MongoDBLibrary.RestfulAPIPost(NodeInDBCol, filter, itemBsonA)
 }
@@ -271,7 +271,8 @@ func StoreDataPathNode(dataPathNode *DataPathNode) (dataPathNodeInDB *DataPathNo
 			}
 			dataPathNodeInDB.DLTunnelInfo = dLTunnelInfo
 		}
-		go StoreNodeInDB(dataPathNodeInDB)
+		//go StoreNodeInDB(dataPathNodeInDB)
+		NodeIdDbChannel <- dataPathNodeInDB
 		return dataPathNodeInDB
 	}
 	return nil
