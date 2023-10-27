@@ -78,11 +78,11 @@ func SetupSmfCollection() {
 		logger.CtxLog.Errorf("Create index failed on TxnId field.")
 	}
 
-	//NodeID
-	_, err = MongoDBLibrary.CreateIndex(NodeInDBCol, "nodeIDInDB")
-	if err != nil {
-		logger.CtxLog.Errorf("Create index failed on Node ID field.")
-	}
+	// //NodeID
+	// _, err = MongoDBLibrary.CreateIndex(NodeInDBCol, "nodeIDInDB")
+	// if err != nil {
+	// 	logger.CtxLog.Errorf("Create index failed on Node ID field.")
+	// }
 
 	smfCount := MongoDBLibrary.GetUniqueIdentity("smfCount")
 	logger.CtxLog.Infof("unique id - init smfCount %v", smfCount)
@@ -252,7 +252,7 @@ func ToBsonMSeidRef(data SeidSmContextRef) (ret bson.M) {
 func ToBsonM(data *SMContext) (ret bson.M) {
 
 	// Marshal data into json format
-	fmt.Println("db - in ToBsonM before marshal")
+	// fmt.Println("db - in ToBsonM before marshal")
 	tmp, err := json.Marshal(data)
 	if err != nil {
 		logger.CtxLog.Errorf("SMContext marshall error: %v", err)

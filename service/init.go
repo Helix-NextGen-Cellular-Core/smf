@@ -336,8 +336,7 @@ func (smf *SMF) Start() {
 		}
 	}
 
-	//if factory.SmfConfig.Configuration.EnableDbStore
-	{
+	if factory.SmfConfig.Configuration.EnableDbStore {
 		initLog.Infof("SetupSmfCollection")
 		context.SetupSmfCollection()
 	}

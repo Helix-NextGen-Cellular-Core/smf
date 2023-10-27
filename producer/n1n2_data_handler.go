@@ -7,6 +7,7 @@ package producer
 
 import (
 	"net/http"
+	"time"
 
 	"github.com/omec-project/http_wrapper"
 	"github.com/omec-project/nas"
@@ -15,6 +16,7 @@ import (
 	"github.com/omec-project/pfcp/pfcpType"
 	"github.com/omec-project/smf/consumer"
 	smf_context "github.com/omec-project/smf/context"
+	"github.com/omec-project/smf/logger"
 	"github.com/omec-project/smf/transaction"
 )
 
@@ -314,6 +316,11 @@ func HandleUpdateCause(txn *transaction.Transaction, response *models.UpdateSmCo
 }
 
 func HandleUpdateN2Msg(txn *transaction.Transaction, response *models.UpdateSmContextResponse, pfcpAction *pfcpAction, pfcpParam *pfcpParam) error {
+	start_time := time.Now().UnixNano()
+	defer func() {
+		end_time := time.Now().UnixNano()
+		logger.PduSessLog.Infof("HandleUpdateN2Msg took: %d ", end_time-start_time)
+	}()
 
 	body := txn.Req.(models.UpdateSmContextRequest)
 	smContext := txn.Ctxt.(*smf_context.SMContext)

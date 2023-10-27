@@ -126,9 +126,9 @@ func (SmfTxnFsm) TxnProcess(txn *transaction.Transaction) (transaction.TxnEvent,
 
 	if factory.SmfConfig.Configuration.EnableDbStore {
 		smContextPool := smf_context.GetSmContextPool()
-		val, ok := smContextPool.Load(smContext.Ref)
+		_, ok := smContextPool.Load(smContext.Ref)
 		if ok {
-			fmt.Println("db - smContext in smContextPool ", val)
+			// fmt.Println("db - smContext in smContextPool ", val)
 		} else {
 			smf_context.StoreSmContextPool(smContext)
 		}

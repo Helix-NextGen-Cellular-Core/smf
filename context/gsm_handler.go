@@ -7,12 +7,19 @@
 package context
 
 import (
+	"time"
+
 	"github.com/omec-project/nas/nasConvert"
 	"github.com/omec-project/nas/nasMessage"
 )
 
 func (smContext *SMContext) HandlePDUSessionEstablishmentRequest(req *nasMessage.PDUSessionEstablishmentRequest) {
 	// Retrieve PDUSessionID
+	start_time := time.Now().UnixNano()
+	defer func() {
+		end_time := time.Now().UnixNano()
+		smContext.SubGsmLog.Infof("HandlePDUSessionEstablishmentRequest took: %d ", end_time-start_time)
+	}()
 	smContext.PDUSessionID = int32(req.PDUSessionID.GetPDUSessionID())
 
 	// Retrieve PTI (Procedure transaction identity)

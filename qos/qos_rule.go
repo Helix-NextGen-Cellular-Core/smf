@@ -7,7 +7,6 @@ package qos
 import (
 	"bytes"
 	"encoding/binary"
-	"log"
 	"net"
 	"strconv"
 	"strings"
@@ -132,8 +131,9 @@ func BuildQosRules(smPolicyUpdates *PolicyUpdate) QoSRules {
 
 	//New Rules to be added
 	if pccRulesUpdate != nil {
-		for pccRuleName, pccRuleVal := range pccRulesUpdate.add {
-			log.Printf("Building QoS Rule from PCC rule [%s]", pccRuleName)
+		// for pccRuleName, pccRuleVal := range pccRulesUpdate.add {
+		for _, pccRuleVal := range pccRulesUpdate.add {
+			// log.Printf("Building QoS Rule from PCC rule [%s]", pccRuleName)
 			refQosData := GetQoSDataFromPolicyDecision(smPolicyDecision, pccRuleVal.RefQosData[0])
 			qosRule := BuildAddQoSRuleFromPccRule(pccRuleVal, refQosData, OperationCodeCreateNewQoSRule)
 			qosRules = append(qosRules, *qosRule)

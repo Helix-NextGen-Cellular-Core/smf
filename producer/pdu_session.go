@@ -10,6 +10,7 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"time"
 
 	"github.com/antihax/optional"
 	"github.com/omec-project/nas/nasMessage"
@@ -75,7 +76,11 @@ func HandlePduSessionContextReplacement(smCtxtRef string) error {
 }
 
 func HandlePDUSessionSMContextCreate(eventData interface{}) error {
-
+	start_time := time.Now().UnixNano()
+	defer func() {
+		end_time := time.Now().UnixNano()
+		logger.PduSessLog.Infof("HandlePDUSessionSMContextCreate took: ", end_time-start_time)
+	}()
 	txn := eventData.(*transaction.Transaction)
 	request := txn.Req.(models.PostSmContextsRequest)
 	smContext := txn.Ctxt.(*smf_context.SMContext)
@@ -213,11 +218,11 @@ func HandlePDUSessionSMContextCreate(eventData interface{}) error {
 
 		//smPolicyDecision = qos.TestMakeSamplePolicyDecision()
 		//Derive QoS change(compare existing vs received Policy Decision)
-		smContext.SubQosLog.Infof("PDUSessionSMContextCreate, received SM policy data: %v",
-			qos.SmPolicyDecisionString(smPolicyDecision))
+		// smContext.SubQosLog.Infof("PDUSessionSMContextCreate, received SM policy data: %v",
+		// 	qos.SmPolicyDecisionString(smPolicyDecision))
 		policyUpdates := qos.BuildSmPolicyUpdate(&smContext.SmPolicyData, smPolicyDecision)
-		smContext.SubQosLog.Infof("PDUSessionSMContextCreate, generated SM policy update: %v",
-			policyUpdates)
+		// smContext.SubQosLog.Infof("PDUSessionSMContextCreate, generated SM policy update: %v",
+		// 	policyUpdates)
 		smContext.SmPolicyUpdates = append(smContext.SmPolicyUpdates, policyUpdates)
 	}
 
@@ -303,7 +308,11 @@ func HandlePDUSessionSMContextCreate(eventData interface{}) error {
 }
 
 func HandlePDUSessionSMContextUpdate(eventData interface{}) error {
-
+	start_time := time.Now().UnixNano()
+	defer func() {
+		end_time := time.Now().UnixNano()
+		logger.PduSessLog.Infof("HandlePDUSessionSMContextUpdate took: %d ", end_time-start_time)
+	}()
 	txn := eventData.(*transaction.Transaction)
 	smContext := txn.Ctxt.(*smf_context.SMContext)
 
@@ -654,7 +663,11 @@ func releaseTunnel(smContext *smf_context.SMContext) bool {
 }
 
 func SendPduSessN1N2Transfer(smContext *smf_context.SMContext, success bool) error {
-
+	start_time := time.Now().UnixNano()
+	defer func() {
+		end_time := time.Now().UnixNano()
+		smContext.SubPduSessLog.Infof("SendPduSessN1N2Transfer took: %v", end_time-start_time)
+	}()
 	//N1N2 Request towards AMF
 	n1n2Request := models.N1N2MessageTransferRequest{}
 

@@ -7,6 +7,7 @@ import (
 	"encoding/json"
 	"net"
 	"sync"
+	"time"
 
 	"github.com/omec-project/pfcp"
 	"github.com/omec-project/pfcp/pfcpType"
@@ -186,8 +187,12 @@ func HandlePfcpHeartbeatResponse(msg *pfcpUdp.Message) {
 
 func HandlePfcpSessionEstablishmentResponse(msg *pfcpUdp.Message) {
 	rsp := msg.PfcpMessage.Body.(pfcp.PFCPSessionEstablishmentResponse)
-	logger.PfcpLog.Infoln("In HandlePfcpSessionEstablishmentResponse")
-
+	// logger.PfcpLog.Infoln("In HandlePfcpSessionEstablishmentResponse")
+	start_time := time.Now().UnixNano()
+	defer func() {
+		end_time := time.Now().UnixNano()
+		logger.PfcpLog.Infof("HandlePfcpSessionEstablishmentResponse took: %d ", end_time-start_time)
+	}()
 	SEID := msg.PfcpMessage.Header.SEID
 	if SEID == 0 {
 		if eventData, ok := msg.EventData.(pfcpUdp.PfcpEventData); !ok {
@@ -199,7 +204,7 @@ func HandlePfcpSessionEstablishmentResponse(msg *pfcpUdp.Message) {
 	}
 	smContext := smf_context.GetSMContextBySEID(SEID)
 	logger.PfcpLog.Infoln("In HandlePfcpSessionEstablishmentResponse SEID ", SEID)
-	logger.PfcpLog.Infoln("In HandlePfcpSessionEstablishmentResponse smContext %v", smContext)
+	// logger.PfcpLog.Infoln("In HandlePfcpSessionEstablishmentResponse smContext %v", smContext)
 
 	//Get NodeId from Seq:NodeId Map
 	seq := msg.PfcpMessage.Header.SequenceNumber
@@ -235,13 +240,13 @@ func HandlePfcpSessionModificationResponse(msg *pfcpUdp.Message) {
 	logger.PfcpLog.Infoln("In HandlePfcpSessionModificationResponse")
 
 	pfcpRsp := msg.PfcpMessage.Body.(pfcp.PFCPSessionModificationResponse)
-	logger.PfcpLog.Infoln("In HandlePfcpSessionModificationResponse pfcpRsp.Cause.CauseValue = [%v], accepted?? %v", pfcpRsp.Cause.CauseValue, pfcpRsp.Cause.CauseValue == pfcpType.CauseRequestAccepted)
+	// logger.PfcpLog.Infoln("In HandlePfcpSessionModificationResponse pfcpRsp.Cause.CauseValue = [%v], accepted?? %v", pfcpRsp.Cause.CauseValue, pfcpRsp.Cause.CauseValue == pfcpType.CauseRequestAccepted)
 
 	SEID := msg.PfcpMessage.Header.SEID
-	logger.PfcpLog.Infoln("In HandlePfcpSessionModificationResponse SEID %v", SEID)
+	// logger.PfcpLog.Infoln("In HandlePfcpSessionModificationResponse SEID %v", SEID)
 
 	smContext := smf_context.GetSMContextBySEID(SEID)
-	logger.PfcpLog.Infoln("In HandlePfcpSessionModificationResponse smContext found by SEID %v", smContext)
+	// logger.PfcpLog.Infoln("In HandlePfcpSessionModificationResponse smContext found by SEID %v", smContext)
 
 	if SEID == 0 {
 		if eventData, ok := msg.EventData.(pfcpUdp.PfcpEventData); !ok {
