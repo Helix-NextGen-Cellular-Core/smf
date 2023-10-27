@@ -12,6 +12,7 @@ import (
 	"fmt"
 	"net"
 	"sync"
+	"time"
 
 	"github.com/omec-project/MongoDBLibrary"
 	"go.mongodb.org/mongo-driver/bson"
@@ -48,11 +49,11 @@ func SetupSmfCollection() {
 
 	dbName := "sdcore_smf"
 	dbUrl := "mongodb://mongodb-arbiter-headless"
-	SmContextDbChannel = make(chan *SMContext, 16348)
-	SeidSmContextDbChannel = make(chan SeidSmContextRef, 16348)
-	DeleteSmContextSeidChannel = make(chan uint64, 16348)
-	DeleteSmContextRefChannel = make(chan string, 16348)
-	NodeIdDbChannel = make(chan *DataPathNodeInDB, 16348)
+	SmContextDbChannel = make(chan *SMContext, 100000)
+	SeidSmContextDbChannel = make(chan SeidSmContextRef, 100000)
+	DeleteSmContextSeidChannel = make(chan uint64, 100000)
+	DeleteSmContextRefChannel = make(chan string, 100000)
+	NodeIdDbChannel = make(chan *DataPathNodeInDB, 100000)
 	numOfWorkerThreads := 25
 
 	if factory.SmfConfig.Configuration.Mongodb.Url != "" {
@@ -78,11 +79,11 @@ func SetupSmfCollection() {
 		logger.CtxLog.Errorf("Create index failed on TxnId field.")
 	}
 
-	// //NodeID
-	// _, err = MongoDBLibrary.CreateIndex(NodeInDBCol, "nodeIDInDB")
-	// if err != nil {
-	// 	logger.CtxLog.Errorf("Create index failed on Node ID field.")
-	// }
+	//NodeID
+	_, err = MongoDBLibrary.CreateIndex(NodeInDBCol, "nodeIDInDB")
+	if err != nil {
+		logger.CtxLog.Errorf("Create index failed on Node ID field.")
+	}
 
 	smfCount := MongoDBLibrary.GetUniqueIdentity("smfCount")
 	logger.CtxLog.Infof("unique id - init smfCount %v", smfCount)
@@ -331,6 +332,10 @@ func GetSeidByRefInDB(ref string) (seid uint64) {
 // GetSMContext By Ref from DB
 func GetSMContextByRefInDB(ref string) (smContext *SMContext) {
 	logger.CtxLog.Debugf("GetSMContextByRefInDB: Ref in DB %v", ref)
+	st := time.Now().UnixNano()
+	defer func() {
+		logger.CtxLog.Debugf("GetSMContextByRefInDB: Ref in DB %v %v", ref, time.Now().UnixNano()-st)
+	}()
 	smContext = &SMContext{}
 	filter := bson.M{}
 	filter["ref"] = ref
