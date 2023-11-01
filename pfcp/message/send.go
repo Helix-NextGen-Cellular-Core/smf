@@ -100,6 +100,7 @@ func SendHeartbeatRequest(upNodeID pfcpType.NodeID, upfPort uint16) error {
 		Port: int(upfPort),
 	}
 
+	// if !smf_context.SMF_Self().BypassUPF {
 	if factory.SmfConfig.Configuration.EnableUpfAdapter {
 		adapter.InsertPfcpTxn(message.Header.SequenceNumber, &upNodeID)
 		if rsp, err := SendPfcpMsgToAdapter(upNodeID, message, addr, nil); err != nil {
@@ -127,6 +128,7 @@ func SendHeartbeatRequest(upNodeID pfcpType.NodeID, upfPort uint16) error {
 			return err
 		}
 	}
+	// }
 	logger.PfcpLog.Debugf("sent pfcp heartbeat request seq[%d] to NodeID[%s]", message.Header.SequenceNumber,
 		upNodeID.ResolveNodeIdToIp().String())
 	return nil

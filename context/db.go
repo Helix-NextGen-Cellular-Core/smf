@@ -49,11 +49,11 @@ func SetupSmfCollection() {
 
 	dbName := "sdcore_smf"
 	dbUrl := "mongodb://mongodb-arbiter-headless"
-	SmContextDbChannel = make(chan *SMContext, 100000)
-	SeidSmContextDbChannel = make(chan SeidSmContextRef, 100000)
-	DeleteSmContextSeidChannel = make(chan uint64, 100000)
-	DeleteSmContextRefChannel = make(chan string, 100000)
-	NodeIdDbChannel = make(chan *DataPathNodeInDB, 100000)
+	SmContextDbChannel = make(chan *SMContext, 26348)
+	SeidSmContextDbChannel = make(chan SeidSmContextRef, 26348)
+	DeleteSmContextSeidChannel = make(chan uint64, 26348)
+	DeleteSmContextRefChannel = make(chan string, 26348)
+	NodeIdDbChannel = make(chan *DataPathNodeInDB, 26348)
 	numOfWorkerThreads := 25
 
 	if factory.SmfConfig.Configuration.Mongodb.Url != "" {
