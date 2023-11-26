@@ -8,8 +8,8 @@ package service
 
 import (
 	"fmt"
-	"net/http"
-	_ "net/http/pprof" //Using package only for invoking initialization.
+	// "net/http"
+	// _ "net/http/pprof" //Using package only for invoking initialization.
 	"os"
 	"os/signal"
 	"sync"
@@ -134,13 +134,13 @@ func (smf *SMF) Initialize(c *cli.Context) error {
 		return err
 	}
 
-	//Initiating a server for profiling
-	if factory.SmfConfig.Configuration.DebugProfilePort != 0 {
-		addr := fmt.Sprintf(":%d", factory.SmfConfig.Configuration.DebugProfilePort)
-		go func() {
-			http.ListenAndServe(addr, nil)
-		}()
-	}
+	// //Initiating a server for profiling
+	// if factory.SmfConfig.Configuration.DebugProfilePort != 0 {
+	// 	addr := fmt.Sprintf(":%d", factory.SmfConfig.Configuration.DebugProfilePort)
+	// 	go func() {
+	// 		http.ListenAndServe(addr, nil)
+	// 	}()
+	// }
 
 	return nil
 }
