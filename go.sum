@@ -722,8 +722,6 @@ github.com/matttproud/golang_protobuf_extensions v1.0.1/go.mod h1:D8He9yQNgCq6Z5
 github.com/matttproud/golang_protobuf_extensions v1.0.2-0.20181231171920-c182affec369 h1:I0XW9+e1XWDxdcEniV4rQAIOPUGDq67JSCiRCgGCZLI=
 github.com/matttproud/golang_protobuf_extensions v1.0.2-0.20181231171920-c182affec369/go.mod h1:BSXmuO+STAnVfrANrmjBb36TMTDstsz7MSK+HVaYKv4=
 github.com/maxbrunsfeld/counterfeiter/v6 v6.2.2/go.mod h1:eD9eIE7cdwcMi9rYluz88Jz2VyhSmden33/aXg4oVIY=
-github.com/mbilal92/MongoDBLibrary v0.0.0-20230807100907-4b47949aea39 h1:iH32jAJrvHQGV60EweCdodCfAoEjALpDahyAWHiY5Qs=
-github.com/mbilal92/MongoDBLibrary v0.0.0-20230807100907-4b47949aea39/go.mod h1:H/4nmfDclxk922yFS/sBBpv2VVy4SP3ud5OIF/1ecMQ=
 github.com/metal-stack/go-ipam v1.11.1/go.mod h1:lYCugB/E4gv3DPbDOxaViySFQuq4gzgZZFNCNMWbZyo=
 github.com/metal-stack/v v1.0.3/go.mod h1:YTahEu7/ishwpYKnp/VaW/7nf8+PInogkfGwLcGPdXg=
 github.com/miekg/dns v1.0.14/go.mod h1:W1PPwlIAgtquWBMBEV9nkV9Cazfe8ScdGz/Lj7v3Nrg=
