@@ -290,6 +290,7 @@ func SendNFDiscoveryUDM(id string) (*models.ProblemDetails, error) {
 				continue
 			}
 			smf_context.SMF_Self().UDMProfile = nfProfile
+			fmt.Println("for Ue: ", id, " for targetNfType ", string(models.NfType_UDM), " NF is: ", nfProfile.Ipv4Addresses)
 			break
 		}
 		for _, service := range *smf_context.SMF_Self().UDMProfile.NfServices {

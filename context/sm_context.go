@@ -463,6 +463,7 @@ func (smContext *SMContext) PCFSelection() error {
 			continue
 		}
 		smContext.SelectedPCFProfile = nfProfile
+		fmt.Println("for Ue: ", smContext.Supi, " for targetNfType ", string(models.NfType_UDM), " NF is: ", nfProfile.Ipv4Addresses)
 		break
 	}
 
