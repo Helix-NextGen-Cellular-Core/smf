@@ -17,7 +17,6 @@ import (
 	"log"
 	"net/http"
 	"strings"
-	"time"
 
 	"github.com/gin-gonic/gin"
 
@@ -88,11 +87,11 @@ func RetrieveSmContext(c *gin.Context) {
 
 // HTTPUpdateSmContext - Update SM Context
 func HTTPUpdateSmContext(c *gin.Context) {
-	start_time := time.Now().UnixNano()
-	defer func() {
-		end_time := time.Now().UnixNano()
-		logger.PduSessLog.Infof("HTTPUpdateSmContext took: %d ", end_time-start_time)
-	}()
+	// start_time := time.Now().UnixNano()
+	// defer func() {
+	// 	end_time := time.Now().UnixNano()
+	// 	logger.PduSessLog.Infof("HTTPUpdateSmContext took: %d ", end_time-start_time)
+	// }()
 
 	logger.PduSessLog.Info("Receive Update SM Context Request")
 	stats.IncrementN11MsgStats(smf_context.SMF_Self().NfInstanceID, string(svcmsgtypes.UpdateSmContext), "In", "", "")

@@ -7,7 +7,6 @@ import (
 	"encoding/json"
 	"net"
 	"sync"
-	"time"
 
 	"github.com/omec-project/pfcp"
 	"github.com/omec-project/pfcp/pfcpType"
@@ -188,11 +187,11 @@ func HandlePfcpHeartbeatResponse(msg *pfcpUdp.Message) {
 func HandlePfcpSessionEstablishmentResponse(msg *pfcpUdp.Message) {
 	rsp := msg.PfcpMessage.Body.(pfcp.PFCPSessionEstablishmentResponse)
 	// logger.PfcpLog.Infoln("In HandlePfcpSessionEstablishmentResponse")
-	start_time := time.Now().UnixNano()
-	defer func() {
-		end_time := time.Now().UnixNano()
-		logger.PfcpLog.Infof("HandlePfcpSessionEstablishmentResponse took: %d ", end_time-start_time)
-	}()
+	// start_time := time.Now().UnixNano()
+	// defer func() {
+	// 	end_time := time.Now().UnixNano()
+	// 	logger.PfcpLog.Infof("HandlePfcpSessionEstablishmentResponse took: %d ", end_time-start_time)
+	// }()
 	SEID := msg.PfcpMessage.Header.SEID
 	if SEID == 0 {
 		if eventData, ok := msg.EventData.(pfcpUdp.PfcpEventData); !ok {

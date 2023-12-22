@@ -12,7 +12,6 @@ import (
 	"fmt"
 	"net"
 	"sync"
-	"time"
 
 	"github.com/omec-project/MongoDBLibrary"
 	"go.mongodb.org/mongo-driver/bson"
@@ -332,10 +331,10 @@ func GetSeidByRefInDB(ref string) (seid uint64) {
 // GetSMContext By Ref from DB
 func GetSMContextByRefInDB(ref string) (smContext *SMContext) {
 	logger.CtxLog.Debugf("GetSMContextByRefInDB: Ref in DB %v", ref)
-	st := time.Now().UnixNano()
-	defer func() {
-		logger.CtxLog.Debugf("GetSMContextByRefInDB: Ref in DB %v %v", ref, time.Now().UnixNano()-st)
-	}()
+	// st := time.Now().UnixNano()
+	// defer func() {
+	// 	logger.CtxLog.Debugf("GetSMContextByRefInDB: Ref in DB %v %v", ref, time.Now().UnixNano()-st)
+	// }()
 	smContext = &SMContext{}
 	filter := bson.M{}
 	filter["ref"] = ref
