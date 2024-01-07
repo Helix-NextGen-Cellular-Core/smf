@@ -9,7 +9,6 @@ package context
 import (
 	"context"
 	"fmt"
-	"hash/fnv"
 	"sort"
 	"strconv"
 	"strings"
@@ -286,7 +285,7 @@ func (smContext *SMContext) ChangeState(nextState SMContextState) {
 		}
 	}
 
-	smContext.PublishSmCtxtInfo()
+	// smContext.PublishSmCtxtInfo() // TODO: Bilal add check if Kakfa is enabled
 
 	smContext.SubCtxLog.Infof("context state change, current state[%v] next state[%v]",
 		smContext.SMContextState.String(), nextState.String())
@@ -440,7 +439,7 @@ func (smContext *SMContext) PCFSelection() error {
 		// Select PCF from available PCF
 		metrics.IncrementSvcNrfMsgStats(SMF_Self().NfInstanceID, string(svcmsgtypes.NnrfNFDiscoveryPcf), "In", http.StatusText(res.StatusCode), "")
 	}
-
+	// if smContext.SelectedPCFProfile  {
 	nfInstanceIds := make([]string, 0, len(rep.NfInstances))
 	for _, nfProfile := range rep.NfInstances {
 		nfInstanceIds = append(nfInstanceIds, nfProfile.NfInstanceId)
@@ -453,19 +452,24 @@ func (smContext *SMContext) PCFSelection() error {
 
 	nfInstanceIndex := 0
 	if SMF_Self().EnableScaling == true {
-		h := fnv.New32a()
-		h.Write([]byte(smContext.Supi))
-		key := int(h.Sum32())
-		nfInstanceIndex = int(key % len(rep.NfInstances))
+		// h := fnv.New32a()
+		// h.Write([]byte(smContext.Supi))
+		// key := int(h.Sum32())
+		// nfInstanceIndex = int(key % len(rep.NfInstances))
+		parts := strings.Split(smContext.Supi, "-")
+		imsiNumber, _ := strconv.Atoi(parts[1])
+		nfInstanceIndex = imsiNumber % len(rep.NfInstances)
+
 	}
 	for _, nfProfile := range rep.NfInstances {
 		if nfInstanceIndex != nfInstanceIdIndexMap[nfProfile.NfInstanceId] {
 			continue
 		}
 		smContext.SelectedPCFProfile = nfProfile
-		logger.CtxLog.Warnln("for Ue: ", smContext.Supi, " for targetNfType ", string(models.NfType_UDM), " NF is: ", nfProfile.Ipv4Addresses)
+		logger.CtxLog.Warnln("for Ue: ", smContext.Supi, " nfInstanceIndex: ", nfInstanceIndex, " for targetNfType ", string(models.NfType_UDM), " NF is: ", nfProfile.Ipv4Addresses)
 		break
 	}
+	// }
 
 	// Create SMPolicyControl Client for this SM Context
 	for _, service := range *smContext.SelectedPCFProfile.NfServices {

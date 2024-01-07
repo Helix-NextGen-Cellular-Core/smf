@@ -20,7 +20,6 @@ import (
 
 	"sync/atomic"
 
-	mi "github.com/omec-project/metricfunc/pkg/metricinfo"
 	"github.com/omec-project/nas/nasMessage"
 	"github.com/omec-project/openapi/models"
 	"github.com/omec-project/pfcp"
@@ -137,10 +136,10 @@ func SendHeartbeatRequest(upNodeID pfcpType.NodeID, upfPort uint16) error {
 func SendPfcpAssociationSetupRequest(upNodeID pfcpType.NodeID, upfPort uint16) {
 
 	//Send Metric event
-	upfStatus := mi.MetricEvent{EventType: mi.CNfStatusEvt,
-		NfStatusData: mi.CNfStatus{NfType: mi.NfTypeUPF,
-			NfStatus: mi.NfStatusDisconnected, NfName: string(upNodeID.NodeIdValue)}}
-	metrics.StatWriter.PublishNfStatusEvent(upfStatus)
+	// upfStatus := mi.MetricEvent{EventType: mi.CNfStatusEvt,
+	// 	NfStatusData: mi.CNfStatus{NfType: mi.NfTypeUPF,
+	// 		NfStatus: mi.NfStatusDisconnected, NfName: string(upNodeID.NodeIdValue)}}
+	// metrics.StatWriter.PublishNfStatusEvent(upfStatus)
 
 	if net.IP.Equal(upNodeID.ResolveNodeIdToIp(), net.IPv4zero) {
 		logger.PfcpLog.Errorf("PFCP Association Setup Request failed, invalid NodeId: %v", string(upNodeID.NodeIdValue))

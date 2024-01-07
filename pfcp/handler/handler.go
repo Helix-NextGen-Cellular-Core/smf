@@ -11,7 +11,6 @@ import (
 	"fmt"
 	"net"
 
-	mi "github.com/omec-project/metricfunc/pkg/metricinfo"
 	"github.com/omec-project/openapi/models"
 	"github.com/omec-project/pfcp"
 	"github.com/omec-project/pfcp/pfcpType"
@@ -64,10 +63,10 @@ func HandlePfcpHeartbeatResponse(msg *pfcpUdp.Message) {
 	}
 
 	//Send Metric event
-	upfStatus := mi.MetricEvent{EventType: mi.CNfStatusEvt,
-		NfStatusData: mi.CNfStatus{NfType: mi.NfTypeUPF,
-			NfStatus: mi.NfStatusConnected, NfName: string(upf.NodeID.NodeIdValue)}}
-	metrics.StatWriter.PublishNfStatusEvent(upfStatus)
+	// upfStatus := mi.MetricEvent{EventType: mi.CNfStatusEvt,
+	// 	NfStatusData: mi.CNfStatus{NfType: mi.NfTypeUPF,
+	// 		NfStatus: mi.NfStatusConnected, NfName: string(upf.NodeID.NodeIdValue)}}
+	// metrics.StatWriter.PublishNfStatusEvent(upfStatus)
 
 	upf.NHeartBeat = 0 //reset Heartbeat attempt to 0
 
@@ -169,10 +168,10 @@ func HandlePfcpAssociationSetupResponse(msg *pfcpUdp.Message) {
 		upf.NHeartBeat = 0 //reset Heartbeat attempt to 0
 
 		//Send Metric event
-		upfStatus := mi.MetricEvent{EventType: mi.CNfStatusEvt,
-			NfStatusData: mi.CNfStatus{NfType: mi.NfTypeUPF,
-				NfStatus: mi.NfStatusConnected, NfName: string(upf.NodeID.NodeIdValue)}}
-		metrics.StatWriter.PublishNfStatusEvent(upfStatus)
+		// upfStatus := mi.MetricEvent{EventType: mi.CNfStatusEvt,
+		// 	NfStatusData: mi.CNfStatus{NfType: mi.NfTypeUPF,
+		// 		NfStatus: mi.NfStatusConnected, NfName: string(upf.NodeID.NodeIdValue)}}
+		// metrics.StatWriter.PublishNfStatusEvent(upfStatus)
 
 		//Supported Features of UPF
 		if rsp.UPFunctionFeatures != nil {

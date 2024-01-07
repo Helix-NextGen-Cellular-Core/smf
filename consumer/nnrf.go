@@ -9,9 +9,9 @@ package consumer
 import (
 	"context"
 	"fmt"
-	"hash/fnv"
 	"net/http"
 	"sort"
+	"strconv"
 	"strings"
 	"time"
 
@@ -280,17 +280,20 @@ func SendNFDiscoveryUDM(id string) (*models.ProblemDetails, error) {
 
 		nfInstanceIndex := 0
 		if smf_context.SMF_Self().EnableScaling == true {
-			h := fnv.New32a()
-			h.Write([]byte(id))
-			key := int(h.Sum32())
-			nfInstanceIndex = int(key % len(result.NfInstances))
+			// h := fnv.New32a()
+			// h.Write([]byte(id))
+			// key := int(h.Sum32())
+			// nfInstanceIndex = int(key % len(result.NfInstances))
+			parts := strings.Split(id, "-")
+			imsiNumber, _ := strconv.Atoi(parts[1])
+			nfInstanceIndex = imsiNumber % len(result.NfInstances)
 		}
 		for _, nfProfile := range result.NfInstances {
 			if nfInstanceIndex != nfInstanceIdIndexMap[nfProfile.NfInstanceId] {
 				continue
 			}
 			smf_context.SMF_Self().UDMProfile = nfProfile
-			fmt.Println("for Ue: ", id, " for targetNfType ", string(models.NfType_UDM), " NF is: ", nfProfile.Ipv4Addresses)
+			logger.ConsumerLog.Warnln("for Ue: ", id, " nfInstanceIndex: ", nfInstanceIndex, " for targetNfType ", string(models.NfType_UDM), " NF is: ", nfProfile.Ipv4Addresses)
 			break
 		}
 		for _, service := range *smf_context.SMF_Self().UDMProfile.NfServices {
