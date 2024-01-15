@@ -18,13 +18,14 @@ import (
 
 // UserPlaneInformation store userplane topology
 type UserPlaneInformation struct {
-	UPNodes              map[string]*UPNode
-	UPFs                 map[string]*UPNode
-	AccessNetwork        map[string]*UPNode
-	UPFIPToName          map[string]string
-	UPFsID               map[string]string    // name to id
-	UPFsIPtoID           map[string]string    // ip->id table, for speed optimization
-	DefaultUserPlanePath map[string][]*UPNode // DNN to Default Path
+	UPNodes                   map[string]*UPNode
+	UPFs                      map[string]*UPNode
+	AccessNetwork             map[string]*UPNode
+	UPFIPToName               map[string]string
+	UPFsID                    map[string]string    // name to id
+	UPFsIPtoID                map[string]string    // ip->id table, for speed optimization
+	DefaultUserPlanePath      map[string][]*UPNode // DNN to Default Path
+	DefaultUserPlanePathMutex sync.RWMutex
 }
 
 type UPNodeType string
@@ -107,11 +108,15 @@ func (upi *UserPlaneInformation) GetUPFIDByIP(ip string) string {
 
 func (upi *UserPlaneInformation) ResetDefaultUserPlanePath() {
 	logger.UPNodeLog.Infof("resetting the default user plane paths [%v]", upi.DefaultUserPlanePath)
+	upi.DefaultUserPlanePathMutex.Lock()
 	upi.DefaultUserPlanePath = make(map[string][]*UPNode)
+	upi.DefaultUserPlanePathMutex.Unlock()
 }
 
 func (upi *UserPlaneInformation) GetDefaultUserPlanePathByDNN(selection *UPFSelectionParams) (path UPPath) {
+	upi.DefaultUserPlanePathMutex.RLock()
 	path, pathExist := upi.DefaultUserPlanePath[selection.String()]
+	upi.DefaultUserPlanePathMutex.RUnlock()
 	logger.CtxLog.Traceln("In GetDefaultUserPlanePathByDNN")
 	logger.CtxLog.Traceln("selection: ", selection.String())
 	if pathExist {
@@ -119,6 +124,8 @@ func (upi *UserPlaneInformation) GetDefaultUserPlanePathByDNN(selection *UPFSele
 	} else {
 		pathExist = upi.GenerateDefaultPath(selection)
 		if pathExist {
+			upi.DefaultUserPlanePathMutex.RLock()
+			defer upi.DefaultUserPlanePathMutex.RUnlock()
 			return upi.DefaultUserPlanePath[selection.String()]
 		}
 	}
@@ -126,7 +133,9 @@ func (upi *UserPlaneInformation) GetDefaultUserPlanePathByDNN(selection *UPFSele
 }
 
 func (upi *UserPlaneInformation) ExistDefaultPath(dnn string) bool {
+	upi.DefaultUserPlanePathMutex.RLock()
 	_, exist := upi.DefaultUserPlanePath[dnn]
+	upi.DefaultUserPlanePathMutex.RUnlock()
 	return exist
 }
 
@@ -208,7 +217,9 @@ func (upi *UserPlaneInformation) GenerateDefaultPath(selection *UPFSelectionPara
 					path = path[1:]
 				}
 				UpfTxnsMutex.Lock()
+				upi.DefaultUserPlanePathMutex.Lock()
 				upi.DefaultUserPlanePath[selection.String()] = path
+				upi.DefaultUserPlanePathMutex.Unlock()
 				UpfTxnsMutex.Unlock()
 				break
 			} else {

@@ -168,7 +168,7 @@ func (smContext *SMContext) MarshalJSON() ([]byte, error) {
 
 // customized unmashaller for sm context
 func (smContext *SMContext) UnmarshalJSON(data []byte) error {
-	fmt.Println("db - in UnmarshalJSON")
+	// fmt.Println("db - in UnmarshalJSON")
 	type Alias SMContext
 	aux := &struct {
 		Tunnel         UPTunnelInDB    `json:"tunnel"`
@@ -268,7 +268,7 @@ func ToBsonM(data *SMContext) (ret bson.M) {
 
 // Store SmContext In DB
 func StoreSmContextInDB(smContext *SMContext) {
-	fmt.Println("db - Store SMContext In DB w ref")
+	// fmt.Println("db - Store SMContext In DB w ref")
 	smContext.SMLock.Lock()
 	defer smContext.SMLock.Unlock()
 	//st := time.Now().UnixNano()
@@ -377,7 +377,7 @@ func GetSMContextBySEIDInDB(seidUint uint64) (smContext *SMContext) {
 func DeleteSmContextInDBBySEID(seidUint uint64) {
 
 	seid := SeidConv(seidUint)
-	fmt.Println("db - delete SMContext In DB by seid")
+	// fmt.Println("db - delete SMContext In DB by seid")
 	filter := bson.M{"seid": seid}
 	logger.CtxLog.Infof("filter : ", filter)
 
@@ -395,7 +395,7 @@ func DeleteSmContextInDBBySEID(seidUint uint64) {
 
 // Delete SMContext By ref from DB
 func DeleteSmContextInDBByRef(ref string) {
-	fmt.Println("db - delete SMContext In DB w ref")
+	// fmt.Println("db - delete SMContext In DB w ref")
 	filter := bson.M{"ref": ref}
 	logger.CtxLog.Infof("filter : ", filter)
 	MongoDBLibrary.RestfulAPIDeleteOne(SmContextDataColl, filter)
@@ -423,8 +423,8 @@ func ShowSmContextPool() {
 
 }
 
-func GetSmContextPool() sync.Map {
-	return smContextPool
+func GetSmContextPool() *sync.Map {
+	return &smContextPool
 }
 
 func StoreSmContextPool(smContext *SMContext) {
