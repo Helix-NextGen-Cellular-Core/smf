@@ -13,6 +13,7 @@ import (
 	"sort"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/antihax/optional"
@@ -29,6 +30,8 @@ import (
 	smf_context "github.com/omec-project/smf/context"
 	"github.com/omec-project/smf/logger"
 )
+
+var SmContextlenMutex sync.Mutex
 
 func SendNFRegistration() (*models.NfProfile, error) {
 	var rep models.NfProfile
@@ -54,6 +57,7 @@ func SendNFRegistration() (*models.NfProfile, error) {
 		SNssais:       &sNssais,
 		PlmnList:      smf_context.SmfPlmnConfig(),
 		AllowedPlmns:  smf_context.SmfPlmnConfig(),
+		Load:          smf_context.GetSmContextLen(),
 	}
 
 	var res *http.Response
@@ -254,7 +258,33 @@ func SendNrfForNfInstance(nrfUri string, targetNfType, requestNfType models.NfTy
 	return result, localErr
 }
 
-func SendNFDiscoveryUDM(id string) (*models.ProblemDetails, error) {
+func SendNFDiscoveryUDM(smContext *smf_context.SMContext) (*models.ProblemDetails, error) {
+	// func SendNFDiscoveryUDM(id string) (*models.ProblemDetails, error) {
+	id := smContext.Supi
+	smf_context.SMF_Self().UdmProfileMap.Load(id)
+
+	value, ok := smf_context.SMF_Self().UdmProfileMap.Load(id)
+	if ok {
+		smContext.SelectedUdmProfile = value.(models.NfProfile)
+		smContext.UdmIP = smContext.SelectedUdmProfile.Ipv4Addresses[0]
+		for _, service := range *smContext.SelectedUdmProfile.NfServices {
+			if service.ServiceName == models.ServiceName_NUDM_SDM {
+				SDMConf := Nudm_SubscriberDataManagement.NewConfiguration()
+				SDMConf.SetBasePath(service.ApiPrefix)
+				// smf_context.SMF_Self().SubscriberDataManagementClient = Nudm_SubscriberDataManagement.NewAPIClient(SDMConf)
+				smContext.SubscriberDataManagementClient = Nudm_SubscriberDataManagement.NewAPIClient(SDMConf)
+			}
+		}
+		return nil, nil
+	}
+
+	SmContextlenMutex.Lock()
+	smf_context.IncSmContextLen()
+	if _, err := SendNFRegistration(); err != nil {
+		fmt.Println("NRF Registration failure, %v", err.Error())
+	}
+	SmContextlenMutex.Unlock()
+
 	localVarOptionals := Nnrf_NFDiscovery.SearchNFInstancesParamOpts{}
 
 	var result models.SearchResult
@@ -292,19 +322,27 @@ func SendNFDiscoveryUDM(id string) (*models.ProblemDetails, error) {
 			if nfInstanceIndex != nfInstanceIdIndexMap[nfProfile.NfInstanceId] {
 				continue
 			}
-			smf_context.SMF_Self().UDMProfile = nfProfile
+			// smf_context.SMF_Self().UDMProfile = nfProfile
+			smContext.SelectedUdmProfile = nfProfile
+			smContext.UdmIP = nfProfile.Ipv4Addresses[0]
+			smf_context.SMF_Self().UdmProfileMap.Store(id, nfProfile)
 			logger.ConsumerLog.Warnln("for Ue: ", id, " nfInstanceIndex: ", nfInstanceIndex, " for targetNfType ", string(models.NfType_UDM), " NF is: ", nfProfile.Ipv4Addresses)
+
 			break
 		}
-		for _, service := range *smf_context.SMF_Self().UDMProfile.NfServices {
+		// }
+		// for _, service := range *smf_context.SMF_Self().UDMProfile.NfServices {
+		for _, service := range *smContext.SelectedUdmProfile.NfServices {
 			if service.ServiceName == models.ServiceName_NUDM_SDM {
 				SDMConf := Nudm_SubscriberDataManagement.NewConfiguration()
 				SDMConf.SetBasePath(service.ApiPrefix)
-				smf_context.SMF_Self().SubscriberDataManagementClient = Nudm_SubscriberDataManagement.NewAPIClient(SDMConf)
+				// smf_context.SMF_Self().SubscriberDataManagementClient = Nudm_SubscriberDataManagement.NewAPIClient(SDMConf)
+				smContext.SubscriberDataManagementClient = Nudm_SubscriberDataManagement.NewAPIClient(SDMConf)
 			}
 		}
 
-		if smf_context.SMF_Self().SubscriberDataManagementClient == nil {
+		// if smf_context.SMF_Self().SubscriberDataManagementClient == nil {
+		if smContext.SubscriberDataManagementClient == nil {
 			logger.ConsumerLog.Warnln("sdm client failed")
 		}
 	} else {

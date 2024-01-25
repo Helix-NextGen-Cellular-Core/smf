@@ -17,6 +17,7 @@ import (
 
 	"github.com/google/uuid"
 
+	"github.com/go-redis/redis"
 	"github.com/omec-project/openapi/Nnrf_NFDiscovery"
 	"github.com/omec-project/openapi/Nnrf_NFManagement"
 	"github.com/omec-project/openapi/Nudm_SubscriberDataManagement"
@@ -51,7 +52,9 @@ type SMFContext struct {
 	SBIPort      int
 	CPNodeID     pfcpType.NodeID
 
-	UDMProfile models.NfProfile
+	UDMProfile    models.NfProfile
+	UdmProfileMap sync.Map
+	PcfProfileMap sync.Map
 
 	UPNodeIDs []pfcpType.NodeID
 	Key       string
@@ -86,6 +89,7 @@ type SMFContext struct {
 	StaticIpInfo             *[]factory.StaticIpInfo
 	EnableScaling            bool
 	BypassUPF                bool
+	RedisClient              *redis.Client
 }
 
 // RetrieveDnnInformation gets the corresponding dnn info from S-NSSAI and DNN
@@ -238,7 +242,11 @@ func InitSmfContext(config *factory.Config) *SMFContext {
 
 	smfContext.PodIp = os.Getenv("POD_IP")
 	SetupNFProfile(config)
-
+	smfContext.RedisClient = redis.NewClient(&redis.Options{
+		Addr:     "redis:6379",
+		Password: "",
+		DB:       1,
+	})
 	return &smfContext
 }
 

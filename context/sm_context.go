@@ -36,6 +36,7 @@ import (
 	"github.com/omec-project/openapi/Namf_Communication"
 	"github.com/omec-project/openapi/Nnrf_NFDiscovery"
 	"github.com/omec-project/openapi/Npcf_SMPolicyControl"
+	"github.com/omec-project/openapi/Nudm_SubscriberDataManagement"
 	"github.com/omec-project/openapi/models"
 	"github.com/omec-project/pfcp/pfcpType"
 	"github.com/omec-project/smf/factory"
@@ -50,6 +51,7 @@ var (
 	smContextPool    sync.Map
 	canonicalRef     sync.Map
 	seidSMContextMap sync.Map
+	smContextlen     int32
 )
 
 var (
@@ -91,6 +93,15 @@ func GetSMContextCount() uint64 {
 	return smContextCount
 }
 
+func IncSmContextLen() {
+	atomic.AddInt32(&smContextlen, 1)
+	fmt.Println("IncSmContextLen: ", smContextlen)
+}
+
+func GetSmContextLen() int32 {
+	return atomic.LoadInt32(&smContextlen)
+}
+
 type UeIpAddr struct {
 	UpfProvided bool
 	Ip          net.IP
@@ -122,6 +133,10 @@ type SMContext struct {
 	AddUeLocation   *models.UserLocation `json:"addUeLocation,omitempty" yaml:"addUeLocation" bson:"addUeLocation,omitempty"` // ignore
 	OldPduSessionId int32                `json:"oldPduSessionId,omitempty" yaml:"oldPduSessionId" bson:"oldPduSessionId,omitempty"`
 	HoState         models.HoState       `json:"hoState,omitempty" yaml:"hoState" bson:"hoState,omitempty"`
+	// UDM CLient
+	UdmIP                          string                                   `json:"udmip,omitempty" yaml:"udmip" bson:"udmip,omitempty"`
+	SelectedUdmProfile             models.NfProfile                         `json:"UDMProfile,omitempty" yaml:"smLock" bson:"UDMProfile,omitempty"`
+	SubscriberDataManagementClient *Nudm_SubscriberDataManagement.APIClient `json:"SubscriberDataManagementClient,omitempty" bson:"SubscriberDataManagementClient,omitempty"` // ?
 
 	// PDUAddress             net.IP `json:"pduAddress,omitempty" yaml:"pduAddress" bson:"pduAddress,omitempty"`
 	PDUAddress             *UeIpAddr `json:"pduAddress,omitempty" yaml:"pduAddress" bson:"pduAddress,omitempty"`
@@ -135,6 +150,7 @@ type SMContext struct {
 
 	AMFProfile         models.NfProfile `json:"amfProfile,omitempty" yaml:"amfProfile" bson:"amfProfile,omitempty"`
 	SelectedPCFProfile models.NfProfile `json:"selectedPCFProfile,omitempty" yaml:"selectedPCFProfile" bson:"selectedPCFProfile,omitempty"`
+	PcfIP              string           `json:"pcfip,omitempty" yaml:"pcfip" bson:"pcfip,omitempty"`
 	SmStatusNotifyUri  string           `json:"smStatusNotifyUri,omitempty" yaml:"smStatusNotifyUri" bson:"smStatusNotifyUri,omitempty"`
 
 	SMContextState SMContextState `json:"smContextState" yaml:"smContextState" bson:"smContextState"`
@@ -206,6 +222,7 @@ func ResolveRef(identifier string, pduSessID int32) (ref string, err error) {
 
 func NewSMContext(identifier string, pduSessID int32) (smContext *SMContext) {
 	smContext = new(SMContext)
+	fmt.Println("NewSMContext: Created")
 	// Create Ref and identifier
 	smContext.Ref = uuid.New().URN()
 	smContextPool.Store(smContext.Ref, smContext)
@@ -298,8 +315,10 @@ func GetSMContext(ref string) (smContext *SMContext) {
 		smContext = value.(*SMContext)
 	} else {
 		if factory.SmfConfig.Configuration.EnableDbStore {
+			fmt.Println("GetSMContext: get from DB")
 			smContext := GetSMContextByRefInDB(ref)
 			if smContext != nil {
+				fmt.Println("GetSMContext: Found in DB")
 				smContextPool.Store(ref, smContext)
 			}
 		}
@@ -348,6 +367,7 @@ func GetSMContextBySEID(SEID uint64) (smContext *SMContext) {
 		smContext = value.(*SMContext)
 	} else {
 		if factory.SmfConfig.Configuration.EnableDbStore {
+			fmt.Println("GetSMContextBySEID: get from DB")
 			smContext = GetSMContextBySEIDInDB(SEID)
 		}
 	}
@@ -407,6 +427,19 @@ func (smContext *SMContext) PCFSelection() error {
 	var rep models.SearchResult
 	var res *http.Response
 	var err error
+	value, ok := SMF_Self().PcfProfileMap.Load(smContext.Supi)
+	if ok {
+		smContext.SelectedPCFProfile = value.(models.NfProfile)
+		smContext.PcfIP = smContext.SelectedPCFProfile.Ipv4Addresses[0]
+		for _, service := range *smContext.SelectedPCFProfile.NfServices {
+			if service.ServiceName == models.ServiceName_NPCF_SMPOLICYCONTROL {
+				SmPolicyControlConf := Npcf_SMPolicyControl.NewConfiguration()
+				SmPolicyControlConf.SetBasePath(service.ApiPrefix)
+				smContext.SMPolicyClient = Npcf_SMPolicyControl.NewAPIClient(SmPolicyControlConf)
+			}
+		}
+		return nil
+	}
 
 	if SMF_Self().EnableNrfCaching {
 		rep, err = nrf_cache.SearchNFInstances(SMF_Self().NrfUri, models.NfType_PCF, models.NfType_SMF, &localVarOptionals)
@@ -437,7 +470,7 @@ func (smContext *SMContext) PCFSelection() error {
 		}
 
 		// Select PCF from available PCF
-		metrics.IncrementSvcNrfMsgStats(SMF_Self().NfInstanceID, string(svcmsgtypes.NnrfNFDiscoveryPcf), "In", http.StatusText(res.StatusCode), "")
+		// metrics.IncrementSvcNrfMsgStats(SMF_Self().NfInstanceID, string(svcmsgtypes.NnrfNFDiscoveryPcf), "In", http.StatusText(res.StatusCode), "")
 	}
 	// if smContext.SelectedPCFProfile  {
 	nfInstanceIds := make([]string, 0, len(rep.NfInstances))
@@ -466,7 +499,9 @@ func (smContext *SMContext) PCFSelection() error {
 			continue
 		}
 		smContext.SelectedPCFProfile = nfProfile
-		logger.CtxLog.Warnln("for Ue: ", smContext.Supi, " nfInstanceIndex: ", nfInstanceIndex, " for targetNfType ", string(models.NfType_UDM), " NF is: ", nfProfile.Ipv4Addresses)
+		smContext.PcfIP = nfProfile.Ipv4Addresses[0]
+		SMF_Self().PcfProfileMap.Store(smContext.Supi, nfProfile)
+		logger.CtxLog.Warnln("for Ue: ", smContext.Supi, " nfInstanceIndex: ", nfInstanceIndex, " for targetNfType ", string(models.NfType_PCF), " NF is: ", nfProfile.Ipv4Addresses)
 		break
 	}
 	// }

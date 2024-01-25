@@ -122,7 +122,8 @@ func HandlePDUSessionSMContextCreate(eventData interface{}) error {
 	}
 
 	// Query UDM
-	if problemDetails, err := consumer.SendNFDiscoveryUDM(smContext.Supi); err != nil {
+	if problemDetails, err := consumer.SendNFDiscoveryUDM(smContext); err != nil {
+		// if problemDetails, err := consumer.SendNFDiscoveryUDM(smContext.Supi); err != nil {
 		smContext.SubPduSessLog.Errorf("PDUSessionSMContextCreate, send NF Discovery Serving UDM Error[%v]", err)
 		txn.Rsp = smContext.GeneratePDUSessionEstablishmentReject("UDMDiscoveryFailure")
 		return fmt.Errorf("UdmError")
@@ -159,8 +160,9 @@ func HandlePDUSessionSMContextCreate(eventData interface{}) error {
 		SingleNssai: optional.NewInterface(openapi.MarshToJsonString(smContext.Snssai)),
 	}
 
-	SubscriberDataManagementClient := smf_context.SMF_Self().SubscriberDataManagementClient
-	metrics.IncrementSvcUdmMsgStats(smf_context.SMF_Self().NfInstanceID, string(svcmsgtypes.SmSubscriptionDataRetrieval), "Out", "", "")
+	// SubscriberDataManagementClient := smf_context.SMF_Self().SubscriberDataManagementClient
+	SubscriberDataManagementClient := smContext.SubscriberDataManagementClient
+	// metrics.IncrementSvcUdmMsgStats(smf_context.SMF_Self().NfInstanceID, string(svcmsgtypes.SmSubscriptionDataRetrieval), "Out", "", "")
 
 	if sessSubData, rsp, err := SubscriberDataManagementClient.
 		SessionManagementSubscriptionDataRetrievalApi.
@@ -176,7 +178,7 @@ func HandlePDUSessionSMContextCreate(eventData interface{}) error {
 			}
 		}()
 		if len(sessSubData) > 0 {
-			metrics.IncrementSvcUdmMsgStats(smf_context.SMF_Self().NfInstanceID, string(svcmsgtypes.SmSubscriptionDataRetrieval), "In", http.StatusText(rsp.StatusCode), "")
+			// metrics.IncrementSvcUdmMsgStats(smf_context.SMF_Self().NfInstanceID, string(svcmsgtypes.SmSubscriptionDataRetrieval), "In", http.StatusText(rsp.StatusCode), "")
 			smContext.DnnConfiguration = sessSubData[0].DnnConfigurations[smContext.Dnn]
 			smContext.SubPduSessLog.Infof("PDUSessionSMContextCreate, subscription data retrieved from UDM")
 		} else {
