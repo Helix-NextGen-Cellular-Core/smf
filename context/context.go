@@ -90,6 +90,7 @@ type SMFContext struct {
 	EnableScaling            bool
 	BypassUPF                bool
 	RedisClient              *redis.Client
+	RedisDb                  int
 }
 
 // RetrieveDnnInformation gets the corresponding dnn info from S-NSSAI and DNN
@@ -245,7 +246,7 @@ func InitSmfContext(config *factory.Config) *SMFContext {
 	smfContext.RedisClient = redis.NewClient(&redis.Options{
 		Addr:     "redis:6379",
 		Password: "",
-		DB:       1,
+		DB:       factory.SmfConfig.Configuration.RedisDb,
 	})
 	return &smfContext
 }
@@ -397,14 +398,14 @@ func (smfCtxt *SMFContext) InitDrsm() error {
 	db := drsm.DbInfo{Url: dbUrl, Name: dbName}
 
 	//for local FSEID
-	if drsmCtxt, err := drsm.InitDRSM("fseid", podId, db, opt); err == nil {
+	if drsmCtxt, err := drsm.InitDRSM("fseid", podId, db, opt, factory.SmfConfig.Configuration.DrsmPunchLiveTime); err == nil {
 		smfCtxt.DrsmCtxts.SeidPool = drsmCtxt
 	} else {
 		return err
 	}
 
 	//for local FTEID
-	if drsmCtxt, err := drsm.InitDRSM("fteid", podId, db, opt); err == nil {
+	if drsmCtxt, err := drsm.InitDRSM("fteid", podId, db, opt, factory.SmfConfig.Configuration.DrsmPunchLiveTime); err == nil {
 		smfCtxt.DrsmCtxts.TeidPool = drsmCtxt
 	} else {
 		return err

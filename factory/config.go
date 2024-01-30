@@ -92,6 +92,8 @@ type Configuration struct {
 	StaticIpInfo             []StaticIpInfo `yaml:"staticIpInfo"`
 	EnableScaling            bool           `yaml:"enableScaling,omitempty"`
 	BypassUPF                bool           `yaml:"bypassUPF,omitempty"`
+	DrsmPunchLiveTime        int            `yaml:"drsmPunchLiveTime,omitempty"`
+	RedisDb                  int            `yaml:"redisDb,omitempty"`
 }
 
 type StaticIpInfo struct {

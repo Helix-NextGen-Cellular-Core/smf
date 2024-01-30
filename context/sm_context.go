@@ -95,7 +95,7 @@ func GetSMContextCount() uint64 {
 
 func IncSmContextLen() {
 	atomic.AddInt32(&smContextlen, 1)
-	fmt.Println("IncSmContextLen: ", smContextlen)
+	// fmt.Println("IncSmContextLen: ", smContextlen)
 }
 
 func GetSmContextLen() int32 {
@@ -222,7 +222,7 @@ func ResolveRef(identifier string, pduSessID int32) (ref string, err error) {
 
 func NewSMContext(identifier string, pduSessID int32) (smContext *SMContext) {
 	smContext = new(SMContext)
-	fmt.Println("NewSMContext: Created")
+	// fmt.Println("NewSMContext: Created")
 	// Create Ref and identifier
 	smContext.Ref = uuid.New().URN()
 	smContextPool.Store(smContext.Ref, smContext)
@@ -315,10 +315,10 @@ func GetSMContext(ref string) (smContext *SMContext) {
 		smContext = value.(*SMContext)
 	} else {
 		if factory.SmfConfig.Configuration.EnableDbStore {
-			fmt.Println("GetSMContext: get from DB")
-			smContext := GetSMContextByRefInDB(ref)
+			// fmt.Println("GetSMContext: get from DB")
+			smContext = GetSMContextByRefInDB(ref)
 			if smContext != nil {
-				fmt.Println("GetSMContext: Found in DB")
+				// fmt.Println("GetSMContext: Found in DB")
 				smContextPool.Store(ref, smContext)
 			}
 		}
@@ -367,8 +367,9 @@ func GetSMContextBySEID(SEID uint64) (smContext *SMContext) {
 		smContext = value.(*SMContext)
 	} else {
 		if factory.SmfConfig.Configuration.EnableDbStore {
-			fmt.Println("GetSMContextBySEID: get from DB")
+			// fmt.Println("GetSMContextBySEID: get from DB")
 			smContext = GetSMContextBySEIDInDB(SEID)
+			seidSMContextMap.Store(SEID, smContext)
 		}
 	}
 	return
