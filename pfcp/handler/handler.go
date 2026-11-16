@@ -63,10 +63,8 @@ func HandlePfcpHeartbeatResponse(msg *pfcpUdp.Message) {
 	}
 
 	//Send Metric event
-	// upfStatus := mi.MetricEvent{EventType: mi.CNfStatusEvt,
 	// 	NfStatusData: mi.CNfStatus{NfType: mi.NfTypeUPF,
 	// 		NfStatus: mi.NfStatusConnected, NfName: string(upf.NodeID.NodeIdValue)}}
-	// metrics.StatWriter.PublishNfStatusEvent(upfStatus)
 
 	upf.NHeartBeat = 0 //reset Heartbeat attempt to 0
 
@@ -168,10 +166,8 @@ func HandlePfcpAssociationSetupResponse(msg *pfcpUdp.Message) {
 		upf.NHeartBeat = 0 //reset Heartbeat attempt to 0
 
 		//Send Metric event
-		// upfStatus := mi.MetricEvent{EventType: mi.CNfStatusEvt,
 		// 	NfStatusData: mi.CNfStatus{NfType: mi.NfTypeUPF,
 		// 		NfStatus: mi.NfStatusConnected, NfName: string(upf.NodeID.NodeIdValue)}}
-		// metrics.StatWriter.PublishNfStatusEvent(upfStatus)
 
 		//Supported Features of UPF
 		if rsp.UPFunctionFeatures != nil {

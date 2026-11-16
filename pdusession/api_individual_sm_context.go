@@ -37,7 +37,6 @@ import (
 func HTTPReleaseSmContext(c *gin.Context) {
 	logger.PduSessLog.Info("Receive Release SM Context Request")
 	stats.IncrementN11MsgStats(smf_context.SMF_Self().NfInstanceID, string(svcmsgtypes.ReleaseSmContext), "In", "", "")
-	// stats.PublishMsgEvent(mi.Smf_msg_type_pdu_sess_release_req)
 
 	var request models.ReleaseSmContextRequest
 	request.JsonData = new(models.SmContextReleaseData)
@@ -87,15 +86,9 @@ func RetrieveSmContext(c *gin.Context) {
 
 // HTTPUpdateSmContext - Update SM Context
 func HTTPUpdateSmContext(c *gin.Context) {
-	// start_time := time.Now().UnixNano()
-	// defer func() {
-	// 	end_time := time.Now().UnixNano()
-	// 	logger.PduSessLog.Infof("HTTPUpdateSmContext took: %d ", end_time-start_time)
-	// }()
 
 	logger.PduSessLog.Info("Receive Update SM Context Request")
 	stats.IncrementN11MsgStats(smf_context.SMF_Self().NfInstanceID, string(svcmsgtypes.UpdateSmContext), "In", "", "")
-	// stats.PublishMsgEvent(mi.Smf_msg_type_pdu_sess_update_req)
 
 	var request models.UpdateSmContextRequest
 	request.JsonData = new(models.SmContextUpdateData)

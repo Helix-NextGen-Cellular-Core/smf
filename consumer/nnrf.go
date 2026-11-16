@@ -259,7 +259,6 @@ func SendNrfForNfInstance(nrfUri string, targetNfType, requestNfType models.NfTy
 }
 
 func SendNFDiscoveryUDM(smContext *smf_context.SMContext) (*models.ProblemDetails, error) {
-	// func SendNFDiscoveryUDM(id string) (*models.ProblemDetails, error) {
 	id := smContext.Supi
 	smf_context.SMF_Self().UdmProfileMap.Load(id)
 
@@ -271,7 +270,6 @@ func SendNFDiscoveryUDM(smContext *smf_context.SMContext) (*models.ProblemDetail
 			if service.ServiceName == models.ServiceName_NUDM_SDM {
 				SDMConf := Nudm_SubscriberDataManagement.NewConfiguration()
 				SDMConf.SetBasePath(service.ApiPrefix)
-				// smf_context.SMF_Self().SubscriberDataManagementClient = Nudm_SubscriberDataManagement.NewAPIClient(SDMConf)
 				smContext.SubscriberDataManagementClient = Nudm_SubscriberDataManagement.NewAPIClient(SDMConf)
 			}
 		}
@@ -297,7 +295,6 @@ func SendNFDiscoveryUDM(smContext *smf_context.SMContext) (*models.ProblemDetail
 	}
 
 	if localErr == nil {
-		// smf_context.SMF_Self().UDMProfile = result.NfInstances[0]
 		nfInstanceIds := make([]string, 0, len(result.NfInstances))
 		for _, nfProfile := range result.NfInstances {
 			nfInstanceIds = append(nfInstanceIds, nfProfile.NfInstanceId)
@@ -310,10 +307,6 @@ func SendNFDiscoveryUDM(smContext *smf_context.SMContext) (*models.ProblemDetail
 
 		nfInstanceIndex := 0
 		if smf_context.SMF_Self().EnableScaling == true {
-			// h := fnv.New32a()
-			// h.Write([]byte(id))
-			// key := int(h.Sum32())
-			// nfInstanceIndex = int(key % len(result.NfInstances))
 			parts := strings.Split(id, "-")
 			imsiNumber, _ := strconv.Atoi(parts[1])
 			nfInstanceIndex = imsiNumber % len(result.NfInstances)
@@ -322,7 +315,6 @@ func SendNFDiscoveryUDM(smContext *smf_context.SMContext) (*models.ProblemDetail
 			if nfInstanceIndex != nfInstanceIdIndexMap[nfProfile.NfInstanceId] {
 				continue
 			}
-			// smf_context.SMF_Self().UDMProfile = nfProfile
 			smContext.SelectedUdmProfile = nfProfile
 			smContext.UdmIP = nfProfile.Ipv4Addresses[0]
 			smf_context.SMF_Self().UdmProfileMap.Store(id, nfProfile)
@@ -330,18 +322,14 @@ func SendNFDiscoveryUDM(smContext *smf_context.SMContext) (*models.ProblemDetail
 
 			break
 		}
-		// }
-		// for _, service := range *smf_context.SMF_Self().UDMProfile.NfServices {
 		for _, service := range *smContext.SelectedUdmProfile.NfServices {
 			if service.ServiceName == models.ServiceName_NUDM_SDM {
 				SDMConf := Nudm_SubscriberDataManagement.NewConfiguration()
 				SDMConf.SetBasePath(service.ApiPrefix)
-				// smf_context.SMF_Self().SubscriberDataManagementClient = Nudm_SubscriberDataManagement.NewAPIClient(SDMConf)
 				smContext.SubscriberDataManagementClient = Nudm_SubscriberDataManagement.NewAPIClient(SDMConf)
 			}
 		}
 
-		// if smf_context.SMF_Self().SubscriberDataManagementClient == nil {
 		if smContext.SubscriberDataManagementClient == nil {
 			logger.ConsumerLog.Warnln("sdm client failed")
 		}
@@ -404,7 +392,6 @@ func SendNFDiscoveryServingAMF(smContext *smf_context.SMContext) (*models.Proble
 			return nil, openapi.ReportError("NfInstances is nil")
 		}
 		for _, nfProfile := range result.NfInstances {
-			//smContext.SubConsumerLog.Infof("send NF Discovery Serving AMF Successful %v amfID %v", smContext.ServingNfId, nfProfile.Ipv4Addresses)
 			smContext.AMFProfile = deepcopy.Copy(nfProfile).(models.NfProfile)
 			break
 		}

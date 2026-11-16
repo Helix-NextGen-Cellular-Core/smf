@@ -314,11 +314,6 @@ func HandleUpdateCause(txn *transaction.Transaction, response *models.UpdateSmCo
 }
 
 func HandleUpdateN2Msg(txn *transaction.Transaction, response *models.UpdateSmContextResponse, pfcpAction *pfcpAction, pfcpParam *pfcpParam) error {
-	// start_time := time.Now().UnixNano()
-	// defer func() {
-	// 	end_time := time.Now().UnixNano()
-	// 	logger.PduSessLog.Infof("HandleUpdateN2Msg took: %d ", end_time-start_time)
-	// }()
 
 	body := txn.Req.(models.UpdateSmContextRequest)
 	smContext := txn.Ctxt.(*smf_context.SMContext)

@@ -386,8 +386,6 @@ func (dataPath *DataPath) String() string {
 func (dataPath *DataPath) validateDataPathUpfStatus() error {
 	firstDPNode := dataPath.FirstDPNode
 	for curDataPathNode := firstDPNode; curDataPathNode != nil; curDataPathNode = curDataPathNode.Next() {
-		// logger.PduSessLog.Infof("Nodes in Data Path [%v] and status [%v]",
-		// curDataPathNode.UPF.NodeID.ResolveNodeIdToIp().String(), curDataPathNode.UPF.UPFStatus.String())
 		if curDataPathNode.UPF.UPFStatus != AssociatedSetUpSuccess {
 			logger.PduSessLog.Errorf("UPF [%v] in DataPath not associated",
 				curDataPathNode.UPF.NodeID.ResolveNodeIdToIp().String())
@@ -566,7 +564,6 @@ func (dpNode *DataPathNode) ActivateUpLinkPdr(smContext *SMContext, defQER *QER,
 				}
 			}
 		}
-		// logger.CtxLog.Infof("activate UpLink PDR[%v]:[%v] ", name, ULPDR)
 	}
 	return nil
 }
@@ -585,7 +582,6 @@ func (dpNode *DataPathNode) ActivateDlLinkPdr(smContext *SMContext, defQER *QER,
 	}
 
 	for name, DLPDR := range curDLTunnel.PDR {
-		// logger.CtxLog.Infof("activate Downlink PDR[%v]:[%v] ", name, DLPDR)
 		DLDestUPF := curDLTunnel.DestEndPoint.UPF
 		DLPDR.QER = append(DLPDR.QER, defQER)
 
@@ -663,7 +659,6 @@ func (dpNode *DataPathNode) ActivateDlLinkPdr(smContext *SMContext, defQER *QER,
 				dlOuterHeaderCreation.Ipv4Address = smContext.Tunnel.ANInformation.IPAddress.To4()
 			}
 		}
-		// logger.CtxLog.Infof("activate Downlink PDR[%v]:[%v] ", name, DLPDR)
 	}
 	return nil
 }

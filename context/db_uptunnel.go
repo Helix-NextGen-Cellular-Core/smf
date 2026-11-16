@@ -271,8 +271,6 @@ func StoreDataPathNode(dataPathNode *DataPathNode) (dataPathNodeInDB *DataPathNo
 			}
 			dataPathNodeInDB.DLTunnelInfo = dLTunnelInfo
 		}
-		// StoreNodeInDB(dataPathNodeInDB)
-		// NodeIdDbChannel <- dataPathNodeInDB
 		return dataPathNodeInDB
 	}
 	return nil

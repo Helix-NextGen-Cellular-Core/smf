@@ -95,7 +95,6 @@ func GetSMContextCount() uint64 {
 
 func IncSmContextLen() {
 	atomic.AddInt32(&smContextlen, 1)
-	// fmt.Println("IncSmContextLen: ", smContextlen)
 }
 
 func GetSmContextLen() int32 {
@@ -222,7 +221,6 @@ func ResolveRef(identifier string, pduSessID int32) (ref string, err error) {
 
 func NewSMContext(identifier string, pduSessID int32) (smContext *SMContext) {
 	smContext = new(SMContext)
-	// fmt.Println("NewSMContext: Created")
 	// Create Ref and identifier
 	smContext.Ref = uuid.New().URN()
 	smContextPool.Store(smContext.Ref, smContext)
@@ -302,8 +300,6 @@ func (smContext *SMContext) ChangeState(nextState SMContextState) {
 		}
 	}
 
-	// smContext.PublishSmCtxtInfo() // TODO: Bilal add check if Kakfa is enabled
-
 	smContext.SubCtxLog.Infof("context state change, current state[%v] next state[%v]",
 		smContext.SMContextState.String(), nextState.String())
 	smContext.SMContextState = nextState
@@ -315,10 +311,8 @@ func GetSMContext(ref string) (smContext *SMContext) {
 		smContext = value.(*SMContext)
 	} else {
 		if factory.SmfConfig.Configuration.EnableDbStore {
-			// fmt.Println("GetSMContext: get from DB")
 			smContext = GetSMContextByRefInDB(ref)
 			if smContext != nil {
-				// fmt.Println("GetSMContext: Found in DB")
 				smContextPool.Store(ref, smContext)
 			}
 		}
@@ -341,7 +335,6 @@ func RemoveSMContext(ref string) {
 	for _, pfcpSessionContext := range smContext.PFCPContext {
 		seidSMContextMap.Delete(pfcpSessionContext.LocalSEID)
 		if factory.SmfConfig.Configuration.EnableDbStore {
-			//go DeleteSmContextInDBBySEID(pfcpSessionContext.LocalSEID)
 			DeleteSmContextSeidChannel <- pfcpSessionContext.LocalSEID
 		}
 	}
@@ -356,7 +349,6 @@ func RemoveSMContext(ref string) {
 	smContextActive := decSMContextActive()
 	metrics.SetSessStats(SMF_Self().NfInstanceID, smContextActive)
 	if factory.SmfConfig.Configuration.EnableDbStore {
-		//go DeleteSmContextInDBByRef(smContext.Ref)
 		DeleteSmContextRefChannel <- smContext.Ref
 	}
 }
@@ -367,7 +359,6 @@ func GetSMContextBySEID(SEID uint64) (smContext *SMContext) {
 		smContext = value.(*SMContext)
 	} else {
 		if factory.SmfConfig.Configuration.EnableDbStore {
-			// fmt.Println("GetSMContextBySEID: get from DB")
 			smContext = GetSMContextBySEIDInDB(SEID)
 			seidSMContextMap.Store(SEID, smContext)
 		}
@@ -471,9 +462,7 @@ func (smContext *SMContext) PCFSelection() error {
 		}
 
 		// Select PCF from available PCF
-		// metrics.IncrementSvcNrfMsgStats(SMF_Self().NfInstanceID, string(svcmsgtypes.NnrfNFDiscoveryPcf), "In", http.StatusText(res.StatusCode), "")
 	}
-	// if smContext.SelectedPCFProfile  {
 	nfInstanceIds := make([]string, 0, len(rep.NfInstances))
 	for _, nfProfile := range rep.NfInstances {
 		nfInstanceIds = append(nfInstanceIds, nfProfile.NfInstanceId)
@@ -486,10 +475,6 @@ func (smContext *SMContext) PCFSelection() error {
 
 	nfInstanceIndex := 0
 	if SMF_Self().EnableScaling == true {
-		// h := fnv.New32a()
-		// h.Write([]byte(smContext.Supi))
-		// key := int(h.Sum32())
-		// nfInstanceIndex = int(key % len(rep.NfInstances))
 		parts := strings.Split(smContext.Supi, "-")
 		imsiNumber, _ := strconv.Atoi(parts[1])
 		nfInstanceIndex = imsiNumber % len(rep.NfInstances)
@@ -505,7 +490,6 @@ func (smContext *SMContext) PCFSelection() error {
 		logger.CtxLog.Warnln("for Ue: ", smContext.Supi, " nfInstanceIndex: ", nfInstanceIndex, " for targetNfType ", string(models.NfType_PCF), " NF is: ", nfProfile.Ipv4Addresses)
 		break
 	}
-	// }
 
 	// Create SMPolicyControl Client for this SM Context
 	for _, service := range *smContext.SelectedPCFProfile.NfServices {
@@ -545,9 +529,6 @@ func (smContext *SMContext) AllocateLocalSEIDForUPPath(path UPPath) {
 
 			if factory.SmfConfig.Configuration.EnableDbStore && !SMF_Self().BypassUPF {
 
-				//go StoreSeidContextInDB(allocatedSEID, smContext)
-				//go StoreRefToSeidInDB(allocatedSEID, smContext)
-				//logger.CtxLog.Infof("Save SEID context into channel, %v", smContext.Supi)
 				seid := SeidConv(allocatedSEID)
 				item := SeidSmContextRef{
 					Ref:  smContext.Ref,
@@ -575,8 +556,6 @@ func (smContext *SMContext) AllocateLocalSEIDForDataPath(dataPath *DataPath) {
 			seidSMContextMap.Store(allocatedSEID, smContext)
 
 			if factory.SmfConfig.Configuration.EnableDbStore && !SMF_Self().BypassUPF {
-				//go StoreSeidContextInDB(allocatedSEID, smContext)
-				//go StoreRefToSeidInDB(allocatedSEID, smContext)
 				seid := SeidConv(allocatedSEID)
 				item := SeidSmContextRef{
 					Ref:  smContext.Ref,

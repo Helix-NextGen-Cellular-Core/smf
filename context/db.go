@@ -108,7 +108,6 @@ func (smContext *SMContext) String() string {
 // customized mashaller for sm context
 func (smContext *SMContext) MarshalJSON() ([]byte, error) {
 	type Alias SMContext
-	// start_time := time.Now()
 
 	dataPathPoolInDBVal := make(map[int64]*DataPathInDB)
 
@@ -155,12 +154,6 @@ func (smContext *SMContext) MarshalJSON() ([]byte, error) {
 		pfcpSessionContextInDB.RemoteSEID = SeidConv(pfcpCtx.RemoteSEID)
 		PFCPContextVal[key] = pfcpSessionContextInDB
 	}
-	// defer func() {
-	// 	process_time := time.Now().Sub(start_time)
-	// 	if process_time.Microseconds() > 300 {
-	// 		fmt.Println("Time to marshal smContext: %v micro %v ms", process_time.Microseconds(), process_time.Milliseconds())
-	// 	}
-	// }()
 
 	return json.Marshal(&struct {
 		Tunnel      UPTunnelInDB    `json:"tunnel"`
@@ -175,7 +168,6 @@ func (smContext *SMContext) MarshalJSON() ([]byte, error) {
 
 // customized unmashaller for sm context
 func (smContext *SMContext) UnmarshalJSON(data []byte) error {
-	// fmt.Println("db - in UnmarshalJSON")
 	type Alias SMContext
 	aux := &struct {
 		Tunnel         UPTunnelInDB    `json:"tunnel"`
@@ -259,7 +251,6 @@ func ToBsonMSeidRef(data SeidSmContextRef) (ret bson.M) {
 func ToBsonM(data *SMContext) (ret bson.M) {
 
 	// Marshal data into json format
-	// fmt.Println("db - in ToBsonM before marshal")
 	tmp, err := json.Marshal(data)
 	if err != nil {
 		logger.CtxLog.Errorf("SMContext marshall error: %v", err)
@@ -275,13 +266,8 @@ func ToBsonM(data *SMContext) (ret bson.M) {
 
 // Store SmContext In DB
 func StoreSmContextInDB(smContext *SMContext) {
-	// fmt.Println("db - Store SMContext In DB w ref")
-	// smContext.SMLock.Lock()
-	// defer smContext.SMLock.Unlock()
-	//st := time.Now().UnixNano()
 	smContextBsonA := ToBsonM(smContext)
 	filter := bson.M{"ref": smContext.Ref}
-	//logger.CtxLog.Infof("Time to bsonm filter: %v %v %v", filter, len(smContextBsonA), time.Now().UnixNano()-st)
 
 	MongoDBLibrary.RestfulAPIPost(SmContextDataColl, filter, smContextBsonA)
 
@@ -326,20 +312,14 @@ func StoreRefToSeidInDB(seidUint uint64, smContext *SMContext) {
 }
 
 func GetSeidByRefInDB(ref string) (seid uint64) {
-	// filter := bson.M{}
-	// filter["ref"] = ref
-
-	// result := MongoDBLibrary.RestfulAPIGetOne(RefSeidCol, filter)
 
 	result, err := SMF_Self().RedisClient.Get(ref).Result()
 	if err != nil {
 		logger.CtxLog.Warnln("GetSeidByRefInDB: Error in fetching from redis: ", err, "ref: ", ref)
 		return
 	}
-	// fmt.Println("GetSeidByRefInDB: result: ", result)
 	resultJson := &SeidSmContextRef{}
 	_ = json.Unmarshal([]byte(result), resultJson)
-	// fmt.Println("GetSeidByRefInDB: resultJson: ", resultJson)
 	seidStr := resultJson.Seid
 	seid, _ = strconv.ParseUint(seidStr, 16, 64)
 	return
@@ -348,27 +328,15 @@ func GetSeidByRefInDB(ref string) (seid uint64) {
 // GetSMContext By Ref from DB
 func GetSMContextByRefInDB(ref string) (smContext *SMContext) {
 	logger.CtxLog.Debugf("GetSMContextByRefInDB: Ref in DB %v", ref)
-	// st := time.Now().UnixNano()
-	// defer func() {
-	// 	logger.CtxLog.Debugf("GetSMContextByRefInDB: Ref in DB %v %v", ref, time.Now().UnixNano()-st)
-	// }()
 	smContext = &SMContext{}
-	// filter := bson.M{}
-	// filter["ref"] = ref
 
-	// result := MongoDBLibrary.RestfulAPIGetOne(SmContextDataColl, filter)
-	// fmt.Println("GetSMContextByRefInDB: Ref in DB %v", ref)
 	result, err := SMF_Self().RedisClient.Get(ref).Result()
 	if err != nil {
 		logger.CtxLog.Warnln("GetSMContextByRefInDB: Error in fetching from redis: ", err, "ref: ", ref)
 		return nil
 	}
-	// fmt.Println("GetSMContextByRefInDB: result: ", result)
-	// if result != nil {
 	if result != "" {
-		// err := json.Unmarshal(mapToByte(result), smContext)
 		err := json.Unmarshal([]byte(result), smContext)
-		// fmt.Println("GetSMContextByRefInDB: smContext: ", smContext)
 		if err != nil {
 			logger.CtxLog.Errorf("smContext unmarshall error: %v", err)
 			return nil
@@ -384,22 +352,9 @@ func GetSMContextByRefInDB(ref string) (smContext *SMContext) {
 // GetSMContext By SEID from DB
 func GetSMContextBySEIDInDB(seidUint uint64) (smContext *SMContext) {
 	seid := SeidConv(seidUint)
-	// filter := bson.M{}
-	// filter["seid"] = seid
 
-	// result := MongoDBLibrary.RestfulAPIGetOne(SeidSmContextCol, filter)
-	// if result != nil {
-	// 	ref := result["ref"].(string)
-	// 	logger.CtxLog.Debugln("StoreSeidContextInDB, result string : ", ref)
-	// 	return GetSMContext(ref)
-	// } else {
-	// 	logger.CtxLog.Warningf("SmContext doesn't exist with seid: %v", seid)
-	// 	return nil
-	// }
-	// fmt.Println("GetSMContextBySEIDInDB: seid: ", seid)
 	result, err := SMF_Self().RedisClient.Get(seid).Result()
 	if err != nil {
-		// logger.CtxLog.Warnln("GetSMContextBySEIDInDB: Error in fetching from redis: ", err, "seid: ", seid)
 		return
 	}
 	resultJson := &SeidSmContextRef{}
@@ -413,29 +368,14 @@ func GetSMContextBySEIDInDB(seidUint uint64) (smContext *SMContext) {
 func DeleteSmContextInDBBySEID(seidUint uint64) {
 
 	seid := SeidConv(seidUint)
-	// fmt.Println("db - delete SMContext In DB by seid")
-	// filter := bson.M{"seid": seid}
-	// logger.CtxLog.Infof("filter : ", filter)
 
-	// result := MongoDBLibrary.RestfulAPIGetOne(SeidSmContextCol, filter)
-	// if result != nil {
-	// 	ref := result["ref"].(string)
-
-	// 	MongoDBLibrary.RestfulAPIDeleteOne(SeidSmContextCol, filter)
-	// 	DeleteSmContextInDBByRef(ref)
-	// } else {
-	// 	logger.CtxLog.Infof("DB entry doesn't exist with seid: ", seid)
-	// }
-	// fmt.Println("DeleteSmContextInDBBySEID: seid: ", seid)
 	result, err := SMF_Self().RedisClient.Get(seid).Result()
 	if err != nil {
 		logger.CtxLog.Warnln("DeleteSmContextInDBBySEID: Error in fetching from redis: ", err, "seid: ", seid)
 		return
 	}
-	// fmt.Println("Deleting result:1 ", result)
 	resultJson := &SeidSmContextRef{}
 	_ = json.Unmarshal([]byte(result), resultJson)
-	// fmt.Println("Deleting result:2 ", resultJson)
 	ref := resultJson.Ref
 	err = SMF_Self().RedisClient.Del(seid).Err()
 	if err != nil {
@@ -447,11 +387,6 @@ func DeleteSmContextInDBBySEID(seidUint uint64) {
 
 // Delete SMContext By ref from DB
 func DeleteSmContextInDBByRef(ref string) {
-	// fmt.Println("db - delete SMContext In DB w ref")
-	// filter := bson.M{"ref": ref}
-	// logger.CtxLog.Infof("filter : ", filter)
-	// MongoDBLibrary.RestfulAPIDeleteOne(SmContextDataColl, filter)
-	// fmt.Println("DeleteSmContextInDBByRef: ref: ", ref)
 	err := SMF_Self().RedisClient.Del(ref).Err()
 	if err != nil {
 		logger.CtxLog.Warnln("DeleteSmContextInDBByRef: Error in Deleting in redis: ", err, "ref: ", ref)
@@ -475,7 +410,6 @@ func mapToByte(data map[string]interface{}) (ret []byte) {
 
 func ShowSmContextPool() {
 	smContextPool.Range(func(k, v interface{}) bool {
-		// fmt.Println("db - iterate:", k, v)
 		return true
 	})
 
@@ -510,25 +444,11 @@ func ProcessSmContextDbChannel() {
 	for {
 		rcvdSmContext := <-SmContextDbChannel
 		rcvdSmContext.SMLock.Lock()
-		// smContextBsonA := ToBsonM(rcvdSmContext)
-		// filter := bson.M{"ref": rcvdSmContext.Ref}
 
-		// rcvdSmContext.SMLock.Unlock()
-		// fmt.Println("len(smContextBsonA):", len(smContextBsonA))
-		// fmt.Println("len(SmContextDbChannel):", len(SmContextDbChannel))
-		//logger.CtxLog.Infof("Time to bsonm filter: %v %v %v", filter, len(smContextBsonA), runtime.NumGoroutine())
-		// st := time.Now()
-		// MongoDBLibrary.RestfulAPIPost(SmContextDataColl, filter, smContextBsonA)
-		// db_request_time := time.Now().Sub(st)
-		// fmt.Println("SmContextDbChannel: Time to post to db: %v %v", filter, db_request_time.Microseconds(), db_request_time.Milliseconds())
-		// fmt.Println("storing rcvdSmContext.Ref: 1", rcvdSmContext.Ref)
 		smContextJson, err := json.Marshal(rcvdSmContext)
-		// fmt.Println("rcvdSmContext: ", rcvdSmContext)
-		// fmt.Println("storing rcvdSmContext.Ref: 2 err:", err, " smContextJson: ", smContextJson)
 		rcvdSmContext.SMLock.Unlock()
 		if err == nil {
 			err = SMF_Self().RedisClient.Set(rcvdSmContext.Ref, smContextJson, 0).Err()
-			// fmt.Println("storing rcvdSmContext.Ref: ", rcvdSmContext.Ref)
 			if err != nil {
 				logger.CtxLog.Warnln("Error in storing in redis: ", err, "rcvdSmContext.Ref: ", rcvdSmContext.Ref)
 			}
@@ -541,21 +461,6 @@ func ProcessSmContextDbChannel() {
 func ProcessSeidSmContextDbChannel() {
 	for {
 		item := <-SeidSmContextDbChannel
-		// itemBsonA := ToBsonMSeidRef(item)
-		// filter := bson.M{"seid": item.Seid}
-		// // fmt.Println("len(itemBsonA):", len(itemBsonA))
-		// // fmt.Println("len(SeidSmContextDbChannel):", len(SeidSmContextDbChannel))
-		// // st := time.Now()
-		// MongoDBLibrary.RestfulAPIPost(SeidSmContextCol, filter, itemBsonA)
-		// // db_request_time := time.Now().Sub(st)
-		// // fmt.Println("SeidSmContextCol: Time to post to db: %v %v", filter, db_request_time.Microseconds(), db_request_time.Milliseconds())
-		// filter = bson.M{"ref": item.Ref}
-		// // st = time.Now()
-		// MongoDBLibrary.RestfulAPIPost(RefSeidCol, filter, itemBsonA)
-		// db_request_time = time.Now().Sub(st)
-		// fmt.Println("RefSeidCol: Time to post to db: %v %v", filter, db_request_time.Microseconds(), db_request_time.Milliseconds())
-		//logger.CtxLog.Infof("ProcessSeidSmContextDbChannel: %v %v %v", item.Seid, filter, len(itemBsonA))
-		// fmt.Println("storing item.Seid: ", item.Seid)
 		itemJson, err := json.Marshal(item)
 		if err == nil {
 			err = SMF_Self().RedisClient.Set(item.Seid, itemJson, 0).Err()
@@ -577,7 +482,6 @@ func ProcessSeidSmContextDbChannel() {
 func ProcessDeleteSmContextSeidChannel() {
 	for {
 		seid := <-DeleteSmContextSeidChannel
-		//logger.CtxLog.Infof("ProcessDeleteSmContextSeidChannel: %v ", seid)
 		DeleteSmContextInDBBySEID(seid)
 	}
 }
@@ -585,7 +489,6 @@ func ProcessDeleteSmContextSeidChannel() {
 func ProcessDeleteSmContextRefChannel() {
 	for {
 		ref := <-DeleteSmContextRefChannel
-		//logger.CtxLog.Infof("ProcessDeleteSmContextRefChannel: %v ", ref)
 		DeleteSmContextInDBByRef(ref)
 	}
 }
@@ -593,7 +496,6 @@ func ProcessDeleteSmContextRefChannel() {
 func ProcessNodeIdDbChannel() {
 	for {
 		nodeInDB := <-NodeIdDbChannel
-		//logger.CtxLog.Infof("ProcessNodeIdDbChannel: %v ", nodeInDB.DataPathNodeUPFNodeID)
 		StoreNodeInDB(nodeInDB)
 	}
 }

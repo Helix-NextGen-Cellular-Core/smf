@@ -59,7 +59,6 @@ func HandlePduSessionContextReplacement(smCtxtRef string) error {
 		//Disassociate ctxt from any look-ups(Report-Req from UPF shouldn't get this context)
 		smf_context.RemoveSMContext(smCtxt.Ref)
 
-		// smCtxt.PublishSmCtxtInfo() // TODO: Bilal add check if Kakfa is enabled
 		//check if PCF session set, send release(Npcf_SMPolicyControl_Delete)
 		//TODO: not done as part of ctxt release
 
@@ -75,11 +74,6 @@ func HandlePduSessionContextReplacement(smCtxtRef string) error {
 }
 
 func HandlePDUSessionSMContextCreate(eventData interface{}) error {
-	// start_time := time.Now().UnixNano()
-	// defer func() {
-	// 	end_time := time.Now().UnixNano()
-	// 	logger.PduSessLog.Infof("HandlePDUSessionSMContextCreate took: ", end_time-start_time)
-	// }()
 	txn := eventData.(*transaction.Transaction)
 	request := txn.Req.(models.PostSmContextsRequest)
 	smContext := txn.Ctxt.(*smf_context.SMContext)
@@ -123,7 +117,6 @@ func HandlePDUSessionSMContextCreate(eventData interface{}) error {
 
 	// Query UDM
 	if problemDetails, err := consumer.SendNFDiscoveryUDM(smContext); err != nil {
-		// if problemDetails, err := consumer.SendNFDiscoveryUDM(smContext.Supi); err != nil {
 		smContext.SubPduSessLog.Errorf("PDUSessionSMContextCreate, send NF Discovery Serving UDM Error[%v]", err)
 		txn.Rsp = smContext.GeneratePDUSessionEstablishmentReject("UDMDiscoveryFailure")
 		return fmt.Errorf("UdmError")
@@ -160,9 +153,7 @@ func HandlePDUSessionSMContextCreate(eventData interface{}) error {
 		SingleNssai: optional.NewInterface(openapi.MarshToJsonString(smContext.Snssai)),
 	}
 
-	// SubscriberDataManagementClient := smf_context.SMF_Self().SubscriberDataManagementClient
 	SubscriberDataManagementClient := smContext.SubscriberDataManagementClient
-	// metrics.IncrementSvcUdmMsgStats(smf_context.SMF_Self().NfInstanceID, string(svcmsgtypes.SmSubscriptionDataRetrieval), "Out", "", "")
 
 	if sessSubData, rsp, err := SubscriberDataManagementClient.
 		SessionManagementSubscriptionDataRetrievalApi.
@@ -178,7 +169,6 @@ func HandlePDUSessionSMContextCreate(eventData interface{}) error {
 			}
 		}()
 		if len(sessSubData) > 0 {
-			// metrics.IncrementSvcUdmMsgStats(smf_context.SMF_Self().NfInstanceID, string(svcmsgtypes.SmSubscriptionDataRetrieval), "In", http.StatusText(rsp.StatusCode), "")
 			smContext.DnnConfiguration = sessSubData[0].DnnConfigurations[smContext.Dnn]
 			smContext.SubPduSessLog.Infof("PDUSessionSMContextCreate, subscription data retrieved from UDM")
 		} else {
@@ -220,10 +210,7 @@ func HandlePDUSessionSMContextCreate(eventData interface{}) error {
 		//smPolicyDecision = qos.TestMakeSamplePolicyDecision()
 		//Derive QoS change(compare existing vs received Policy Decision)
 		// smContext.SubQosLog.Infof("PDUSessionSMContextCreate, received SM policy data: %v",
-		// 	qos.SmPolicyDecisionString(smPolicyDecision))
 		policyUpdates := qos.BuildSmPolicyUpdate(&smContext.SmPolicyData, smPolicyDecision)
-		// smContext.SubQosLog.Infof("PDUSessionSMContextCreate, generated SM policy update: %v",
-		// 	policyUpdates)
 		smContext.SmPolicyUpdates = append(smContext.SmPolicyUpdates, policyUpdates)
 	}
 
@@ -309,11 +296,6 @@ func HandlePDUSessionSMContextCreate(eventData interface{}) error {
 }
 
 func HandlePDUSessionSMContextUpdate(eventData interface{}) error {
-	// start_time := time.Now().UnixNano()
-	// defer func() {
-	// 	end_time := time.Now().UnixNano()
-	// 	logger.PduSessLog.Infof("HandlePDUSessionSMContextUpdate took: %d ", end_time-start_time)
-	// }()
 	txn := eventData.(*transaction.Transaction)
 	smContext := txn.Ctxt.(*smf_context.SMContext)
 
@@ -407,17 +389,6 @@ func HandlePDUSessionSMContextUpdate(eventData interface{}) error {
 
 					//Form Modify err rsp
 					httpResponse = makePduCtxtModifyErrRsp(smContext, err.Error())
-
-					/*
-						// TODO: Add Ctxt cleanup if PFCP response is context not found,
-						// just initiating PFCP session release will not help
-							//PFCP Modify Err, initiate release
-							SendPfcpSessionReleaseReq(smContext)
-
-							//Change state to InactivePending
-							smContext.ChangeState(smf_context.SmStateInActivePending)
-							smContext.SubCtxLog.Traceln("PDUSessionSMContextUpdate, SMContextState Change State: ", smContext.SMContextState.String())
-					*/
 
 				} else {
 					//Modify Success
@@ -664,11 +635,6 @@ func releaseTunnel(smContext *smf_context.SMContext) bool {
 }
 
 func SendPduSessN1N2Transfer(smContext *smf_context.SMContext, success bool) error {
-	// start_time := time.Now().UnixNano()
-	// defer func() {
-	// 	end_time := time.Now().UnixNano()
-	// 	smContext.SubPduSessLog.Infof("SendPduSessN1N2Transfer took: %v", end_time-start_time)
-	// }()
 	//N1N2 Request towards AMF
 	n1n2Request := models.N1N2MessageTransferRequest{}
 
