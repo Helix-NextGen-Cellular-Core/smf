@@ -1,7 +1,7 @@
 # Builds the Helix image ghcr.io/helix-nextgen-cellular-core/smf:v1.0.0
 # the same way it was built and verified:
 #   docker build -t smf:local .
-FROM golang:1.16.0-stretch AS builder
+FROM golang:1.18.3-stretch AS builder
 WORKDIR /go/src/smf
 COPY . .
 RUN go mod vendor \
