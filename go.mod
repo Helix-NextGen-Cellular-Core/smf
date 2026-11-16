@@ -4,13 +4,13 @@
 
 module github.com/omec-project/smf
 
-replace github.com/omec-project/nrf => ../nrf
+replace github.com/omec-project/nrf => github.com/Helix-NextGen-Cellular-Core/nrf v1.0.0
 
-replace github.com/omec-project/util => ../util
+replace github.com/omec-project/util => github.com/Helix-NextGen-Cellular-Core/util v1.0.0
 
-replace github.com/omec-project/nas => ../nas
+replace github.com/omec-project/nas => github.com/Helix-NextGen-Cellular-Core/nas v1.0.0
 
-replace github.com/omec-project/MongoDBLibrary => ../mongodblibrary
+replace github.com/omec-project/MongoDBLibrary => github.com/Helix-NextGen-Cellular-Core/mongodblibrary v1.0.0
 
 go 1.16
 
